@@ -22,6 +22,14 @@ services:
     ports:
       - "6379:6379"
 
+  frontend:
+    build:
+      context: ./frontend # Путь к папке, где лежит твой Dockerfile для Next.js
+    container_name: studytube-frontend
+    restart: always
+    expose:
+      - "3000"
+
   backend:
     build: ./backend
     container_name: studytube-backend
@@ -41,8 +49,9 @@ services:
     container_name: studytube-nginx
     restart: always
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     ports:
       - "80:80"
     depends_on:
       - backend
+      - frontend
