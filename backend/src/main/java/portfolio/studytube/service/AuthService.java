@@ -16,15 +16,16 @@ public class AuthService {
         if (userToRegister.name() == null || userToRegister.name().isBlank()) {
             throw new RuntimeException("Name cannot be empty");
         }
-        if(userRepository.findByName(userToRegister.name()).isPresent()) {
+        if (userRepository.findByName(userToRegister.name()).isPresent()) {
             throw new RuntimeException("User already exists");
         }
-        if(userToRegister.password().length() < 6 || userToRegister.password().length() > 12) {
+        if (userToRegister.password().length() < 6 || userToRegister.password().length() > 12) {
             throw new RuntimeException("Not available password");
         }
 
         userRepository.save(Wrapper.toEntity(userToRegister));
     }
+
 
     public AuthResponseDTO executeLogin(AuthRequestDTO authRequestDTO) {
         User user = userRepository.findByName(authRequestDTO.name())
