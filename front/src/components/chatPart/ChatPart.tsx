@@ -31,17 +31,25 @@ export default function ChatPart() {
                                 </div>
                             </div>
                             <div className={classes.aboutNavR}>
-                                <div className={classes.autoScrollButton}>Auto Scroll</div>
+                                <div className={classes.autoScrollButton}><div className={classes.arrows} />Auto Scroll</div>
                                 <div className={classes.closeArrow}> 
                                     <div className={classes.arrow}></div>
                                 </div>
                             </div>
                         </div>
-                        <div className={classes.aboutScroller}></div>
+                        <div className={classes.aboutScroller}>
+                            <div className={classes.block}>
+                                <div className={classes.time}>##:##</div>
+                                <div className={classes.blockTitle}>Game Introduction</div>
+                                <div className={classes.blockText}>In today's gameplay video, the presenter humorously shifts between discussing health and video games, particularly highlighting the new Call of Duty set in World War II, while engaging viewers in light-hearted banter about finding hidden elements in the game. Additionally, there is a mention of previous horror-themed content, indicating a diverse range of topics covered in the channel.</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div className={classes.rightPart}>
-
+                    <div className={classes.navbar}></div>
+                    <div className={classes.backt}></div>
+                    <div className={classes.inputCont}></div>
                 </div>
             </div> 
         </>
