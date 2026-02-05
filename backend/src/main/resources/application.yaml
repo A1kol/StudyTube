@@ -25,3 +25,8 @@ spring:
       chat:
         options:
           model: llama3.2
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:your_very_long_random_string_with_at_least_32_characters_for_safety}
+    expiration: 86400000
