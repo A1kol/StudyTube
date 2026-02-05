@@ -26,7 +26,6 @@ public class AuthService {
         userRepository.save(Wrapper.toEntity(userToRegister));
     }
 
-
     public AuthResponseDTO executeLogin(AuthRequestDTO authRequestDTO) {
         User user = userRepository.findByName(authRequestDTO.name())
                 .orElseThrow(() -> new RuntimeException("No such user found"));
@@ -37,6 +36,4 @@ public class AuthService {
 
         return new AuthResponseDTO(user.getName());
     }
-
-
 }
