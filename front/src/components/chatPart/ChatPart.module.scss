@@ -1,0 +1,142 @@
+.wrapper{
+    width: 100%;
+    height: 93%;
+    display: flex;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    gap: 20px;
+
+    .leftPart{
+        width: 50%;
+        height: 100%;
+        // background-color: lightgray;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+
+        .videoCont{
+            width: 100%;
+            height: 51%;
+            border-radius: 20px;
+
+            .video{
+                width: 100%;
+                height: 100%;
+                border-radius: 20px;
+            }
+        }
+
+        .AboutMCont{
+            height: 46.5%;
+            width: 100%;
+
+
+            .aboutNav{
+                width: 100%;
+                height: 13%;
+                display: flex;
+                justify-content: space-between;
+
+
+                .aboutNavL{
+                    width: 38.5%;
+                    height: 100%;
+                    padding: 4px 3px;
+                    display: flex;
+                    justify-content: space-between;
+                    border-radius: 15px;
+                    border: 1px solid rgb(179, 179, 179);
+
+                    .chapters, .transcript{
+                        width: 48%;
+                        height: 100%;
+                        padding: 6px 12px;
+                        // background-color: rgb(189, 189, 189);
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        border-radius: 13px;
+                        gap: 7px;
+
+                        .icon1{
+                            width: 16px;
+                            height: 16px;
+                            background: url("../../../public/chatPart/book.svg");
+                            background-position: center;
+                            background-repeat: no-repeat;
+                            background-size: contain;
+                        }
+
+                        .icon2{
+                            width: 16px;
+                            height: 16px;
+                            background: url("../../../public/chatPart/tletter.svg");
+                            background-position: center;
+                            background-repeat: no-repeat;
+                            background-size: contain;
+                        }
+
+                        .Name{
+                            font-size: 14px;
+                            color: black;
+                            font-weight: 400;
+                            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+                        }
+                    }
+                }
+                .aboutNavR{
+                    width: 28.5%;
+                    height: 100%;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+
+                    .autoScrollButton{
+                        width: 73%;
+                        height: 100%;
+                        border-radius: 15px;
+                        border: 1px solid rgb(179, 179, 179);
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        color: black;
+                        
+                        font-size: 14px;
+                        font-weight: 400;
+                        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+
+                    }
+                    .closeArrow{
+                        width: 22%;
+                        height: 100%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+
+                        border-radius: 15px;
+                        border: 1px solid rgb(179, 179, 179);
+
+                        .arrow{
+                            width: 15px;
+                            height: 16px;
+                            background: url("../../../public/chatPart/arrowUp.svg");
+                            background-position: center;
+                            background-repeat: no-repeat;
+                            background-size: contain;
+                        }
+                    }
+                }
+            }
+            .aboutScroller{
+                
+            }
+        }
+    }
+
+    .rightPart{
+        width: 50%;
+        height: 100%;
+        background-color: gray;
+
+    }
+}
