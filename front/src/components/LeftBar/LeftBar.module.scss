@@ -1,16 +1,208 @@
+
+:root {
+  --primary: #1a1a1a;
+  --bg-hover: rgba(0, 0, 0, 0.05);
+  --text-muted: #666;
+  --radius: 8px;
+  --transition: all 0.2s ease-in-out;
+}
 .wrapper {
     position: fixed; // Оставляем fixed, чтобы он был поверх всего
     left: 0;
-    width: 260px;
+    width: 255px;
     height: 100vh;
     background-color: rgb(245, 245, 245);
     transform: translateX(-100%);
     transition: transform 0.3s ease;
     z-index: 1000; // Убедись, что он выше Header
     border-right: 1px solid #ccc;
+
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+    padding-right: 8px;
+
+    .barHeader{
+        width: 100%;
+        height: 4%;
+        // background-color: salmon;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding-left: 16px;
+
+        .logo{
+            width: 24px;
+            height: 24px;
+
+            background: url("../../../public/Header/logoB.svg");
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: contain;
+        }
+
+        .title{
+            font-size: 18px;
+            font-weight: bold;
+
+            color: black;
+            letter-spacing: 0.2px;
+        }
+    }
+
+    .mainButtons{
+        width: 240px;
+        padding: 12px;
+        padding: 8px;
+        padding-top: 12px;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+
+        .navGroup {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .navItem {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            text-decoration: none;
+            color: var(--text-muted);
+            background: transparent;
+            border: none;
+            border-radius: var(--radius);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            text-align: left;
+            width: 100%;
+        }
+
+        .navItem:hover {
+            background-color: var(--bg-hover);
+            color: var(--primary);
+        }
+
+        .icon {
+            opacity: 0.7;
+            transition: var(--transition);
+        }
+
+        .navItem:hover .icon {
+            opacity: 1;
+            transform: scale(1.05);
+        }
+    }
+
+    .barNav{
+
+        width: 260px;
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+        padding: 12px;
+
+        .recent {
+            width: 100%;
+            max-width: 260px; /* Ограничиваем ширину */
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .sectionTitle {
+            font-size: 14px;
+            font-weight: 600;
+            color: rgba(0, 0, 0, 0.45);
+            margin: 0 0 6px 8px;
+            letter-spacing: 0.02em;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        }
+
+        .group {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            
+            color: rgb(193, 193, 193);
+        }
+
+        .navButton {
+            display: flex;
+            align-items: center;
+            padding: 8px 10px;
+            border-radius: 8px;
+            border: none;
+            background: transparent;
+            color: rgba(0, 0, 0, 0.75);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            width: 100%;
+            text-align: left;
+        }
+
+        .navButton:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+            color: #000;
+        }
+
+        .active {
+            background-color: rgba(0, 0, 0, 0.05);
+            color: #000;
+        }
+
+        .itemContent {
+            display: flex;
+            align-items: center;
+            min-width: 0; 
+        }
+
+        .icon {
+            margin-right: 10px;
+            flex-shrink: 0;
+            opacity: 0.7;
+        }
+
+        .moreIcon {
+            opacity: 0;
+            transition: opacity 0.2s;
+            flex-shrink: 0;
+        }
+
+        .navButton:hover .moreIcon {
+            opacity: 0.4;   
+        }
+
+        .truncate {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .statusDot {
+            width: 8px;
+            height: 8px;
+            background-color: #22c55e;
+            border-radius: 50%;
+            margin: 0 14px 0 4px;
+            flex-shrink: 0;
+        }
+
+        .emptyMessage {
+            font-size: 14px;
+            color: rgba(149, 149, 149, 0.4);
+            padding: 8px 12px;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            font-weight: 600;
+        }
+    }
 }
 
 .open {
     transform: translateX(0);
 }
-
