@@ -262,7 +262,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 0 8px 8px 8px; // Отступы по бокам и снизу
+  padding: 0 8px 8px 8px; 
   width: 100%;
 
   .planBadge {
@@ -293,7 +293,7 @@
     justify-content: space-between;
     background: #ffffff;
     border: 1px solid rgba(0, 0, 0, 0.08);
-    border-radius: 16px; // Более закругленные края как в YouLearn
+    border-radius: 16px;
     padding: 10px 12px;
     cursor: pointer;
     transition: all 0.2s ease-in-out;

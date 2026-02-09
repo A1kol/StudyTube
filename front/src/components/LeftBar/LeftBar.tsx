@@ -12,7 +12,6 @@ export default function LeftBar({ isOpen, recentItemsFromBackend = [] }: LeftBar
 
   return (
     <div className={`${classes.wrapper} ${isOpen ? classes.open : ""}`}>
-      {/* Контент, который может скроллиться */}
       <div className={classes.topContent}>
         <div className={classes.barHeader}>
           <div className={classes.logo}></div>
@@ -37,7 +36,6 @@ export default function LeftBar({ isOpen, recentItemsFromBackend = [] }: LeftBar
         </div>
 
         <div className={classes.barNav}>
-          {/* Spaces */}
           <div className={classes.section}>
             <p className={classes.sectionTitle}>Spaces</p>
             <div className={classes.group}>
@@ -55,7 +53,6 @@ export default function LeftBar({ isOpen, recentItemsFromBackend = [] }: LeftBar
             </div>
           </div>
 
-          {/* Recents */}
           <div className={classes.section}>
             <p className={classes.sectionTitle}>Recents</p>
             <div className={classes.group}>
@@ -83,7 +80,6 @@ export default function LeftBar({ isOpen, recentItemsFromBackend = [] }: LeftBar
             </div>
           </div>
 
-          {/* Help & Tools */}
           <div className={classes.section}>
             <p className={classes.sectionTitle}>Help & Tools</p>
             <div className={classes.group}>
