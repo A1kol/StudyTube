@@ -1,8 +1,10 @@
+'use client'
 import classes from "./ChatPart.module.scss"
-
+import { useState } from "react"
 
 export default function ChatPart() {
-
+    const [active, setActive] = useState<"chapters" | "transcript">("chapters");
+    const [activeN, setActiveN] = useState<"chat" | "summary" | "notes">("chat");
 
     return(
         <>
@@ -11,7 +13,7 @@ export default function ChatPart() {
                     <div className={classes.videoCont}>
                         <iframe 
                             className={classes.video}
-                            src="https://www.youtube.com/embed/T7ZKNoB98ok?start=368" 
+                            src="https://www.youtube.com/embed/T7ZKNoB98ok" 
                             title="YouTube video player"
                             frameBorder="0"
                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -21,12 +23,23 @@ export default function ChatPart() {
                     <div className={classes.AboutMCont}>
                         <div className={classes.aboutNav}>
                             <div className={classes.aboutNavL}>
-                                <div className={classes.chapters}>
-                                    <div className={classes.icon1} />
+                                <div
+                                    className={`${classes.chapters} ${
+                                    active === "chapters" ? classes.active : ""
+                                    }`}
+                                    onClick={() => setActive("chapters")}
+                                >
+                                    <div className={classes.icon} />
                                     <p className={classes.Name}>Chapters</p>
                                 </div>
-                                <div className={classes.transcript}>
-                                    <div className={classes.icon2} />
+
+                                <div
+                                    className={`${classes.transcript} ${
+                                    active === "transcript" ? classes.active : ""
+                                    }`}
+                                    onClick={() => setActive("transcript")}
+                                >
+                                    <div className={classes.icon} />
                                     <p className={classes.Name}>Transcript</p>
                                 </div>
                             </div>
@@ -47,9 +60,57 @@ export default function ChatPart() {
                     </div>
                 </div>
                 <div className={classes.rightPart}>
-                    <div className={classes.navbar}></div>
-                    <div className={classes.backt}></div>
-                    <div className={classes.inputCont}></div>
+                    <div className={classes.navbar}>
+                        <div
+                            className={`${classes.chat} ${activeN === "chat" ? classes.activeN : ""}`}
+                            onClick={() => setActiveN("chat")}
+                        >
+                            <div className={classes.icon} />
+                            Chat
+                        </div>
+
+                        <div
+                            className={`${classes.summary} ${
+                            activeN === "summary" ? classes.activeN : ""
+                            }`}
+                            onClick={() => setActiveN("summary")}
+                        >
+                            <div className={classes.icon} />
+                            Summary
+                        </div>
+
+                        <div
+                            className={`${classes.notes} ${
+                            activeN === "notes" ? classes.activeN : ""
+                            }`}
+                            onClick={() => setActiveN("notes")}
+                        >
+                            <div className={classes.icon} />
+                            Notes
+                        </div>
+                    </div>
+                    <div className={classes.backt}>
+                        <div className={classes.backtCont}>
+                            <div className={classes.logo}>
+
+                            </div>
+                            <div className={classes.title}>
+                                <p className={classes.name}>Learn with Studai</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div className={classes.inputCont}>
+                        <div className={classes.editorWrapper}>
+                            <div
+                                className={classes.editor}
+                                contentEditable
+                                role="textbox"
+                                spellCheck={true}
+                                data-placeholder="Learn anything"
+                                suppressContentEditableWarning
+                            ></div>
+                        </div>
+                    </div>
                 </div>
             </div> 
         </>

@@ -1,16 +1,357 @@
+:root {
+  --font-main: var(--font-geist-sans), Inter, system-ui, sans-serif;
+  
+  --primary: #1a1a1a;
+  --bg-hover: rgba(0, 0, 0, 0.05);
+  --text-muted: #666;
+  --radius: 8px;
+  --transition: all 0.2s ease-in-out;
+}
+
 .wrapper {
-    position: fixed; // Оставляем fixed, чтобы он был поверх всего
+    position: fixed;
     left: 0;
-    width: 260px;
+    width: 255px;
     height: 100vh;
     background-color: rgb(245, 245, 245);
     transform: translateX(-100%);
     transition: transform 0.3s ease;
-    z-index: 1000; // Убедись, что он выше Header
-    border-right: 1px solid #ccc;
+    z-index: 1000;
+    border-right: 1px solid #e4e4e4;
+
+    font-family: var(--font-main);
+
+    button, input, select, textarea {
+        font-family: inherit;
+    }
+
+    display: flex;
+    flex-direction: column; 
+    padding: 1rem 8px 1rem 0; 
+
+
+    .topContent {
+        flex: 1;
+        overflow-y: auto; 
+        display: flex;
+        flex-direction: column;
+        
+        &::-webkit-scrollbar { width: 4px; }
+    }
+
+    .userFooter {
+        flex-shrink: 0; 
+        margin-top: auto; 
+        padding: 12px 8px 0 8px; 
+        width: 100%;
+        background-color: rgb(245, 245, 245);
+
+        .planBadge {
+            margin: 0 auto;
+        }
+    }
+
+    .barHeader{
+        width: 100%;
+        height: 4%;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding-left: 16px;
+
+        .logo{
+            width: 24px;
+            height: 24px;
+
+            background: url("../../../public/Header/logoB.svg");
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: contain;
+        }
+
+        .title{
+            font-size: 18px;
+            font-weight: bold;
+
+            color: black;
+            letter-spacing: 0.2px;
+        }
+    }
+
+    .mainButtons{
+        width: 240px;
+        padding: 12px;
+        padding: 8px;
+        padding-top: 12px;
+
+
+        .navGroup {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .navItem {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            text-decoration: none;
+            color: var(--text-muted);
+            background: transparent;
+            border: none;
+            border-radius: var(--radius);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            text-align: left;
+            width: 100%;
+        }
+
+        .navItem:hover {
+            background-color: var(--bg-hover);
+            color: var(--primary);
+        }
+
+        .icon {
+            opacity: 0.7;
+            transition: var(--transition);
+        }
+
+        .navItem:hover .icon {
+            opacity: 1;
+            transform: scale(1.05);
+        }
+    }
+
+    .barNav{
+
+        width: 260px;
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+        padding: 12px;
+
+        .recent {
+            width: 100%;
+            max-width: 260px; 
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .sectionTitle {
+            font-size: 14px;
+            font-weight: 600;
+            color: rgba(0, 0, 0, 0.45);
+            margin: 0 0 6px 8px;
+            letter-spacing: 0.02em;
+        }
+
+        .group {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            
+            color: rgb(193, 193, 193);
+        }
+
+        .navButton {
+            display: flex;
+            align-items: center;
+            padding: 8px 10px;
+            border-radius: 8px;
+            border: none;
+            background: transparent;
+            color: rgba(0, 0, 0, 0.75);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            width: 100%;
+            text-align: left;
+        }
+
+        .navButton:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+            color: #000;
+        }
+
+        .active {
+            background-color: rgba(0, 0, 0, 0.05);
+            color: #000;
+        }
+
+        .itemContent {
+            display: flex;
+            align-items: center;
+            min-width: 0; 
+        }
+
+        .icon {
+            margin-right: 10px;
+            flex-shrink: 0;
+            opacity: 0.7;
+        }
+
+        .moreIcon {
+            opacity: 0;
+            transition: opacity 0.2s;
+            flex-shrink: 0;
+        }
+
+        .navButton:hover .moreIcon {
+            opacity: 0.4;   
+        }
+
+        .truncate {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .statusDot {
+            width: 8px;
+            height: 8px;
+            background-color: #22c55e;
+            border-radius: 50%;
+            margin: 0 14px 0 4px;
+            flex-shrink: 0;
+        }
+
+        .emptyMessage {
+            font-size: 14px;
+            color: rgba(149, 149, 149, 0.4);
+            padding: 8px 12px;
+            
+            font-weight: 600;
+        }
+    }
 }
 
 .open {
     transform: translateX(0);
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+.userFooter {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 8px 8px 8px; 
+  width: 100%;
+
+  .planBadge {
+    display: flex;
+    justify-content: center;
+    min-width: 200px;
+    background: linear-gradient(to bottom, rgba(60, 179, 113, 0.15), rgba(60, 179, 113, 0.05));
+    border: 0.5px solid rgba(60, 179, 113, 0.4);
+    border-bottom: none;
+    border-radius: 8px 8px 0 0;
+    padding: 1px 24px;
+    backdrop-filter: blur(8px);
+    z-index: 1;
+
+    .planText {
+      font-size: 11px;
+      font-weight: 400;
+      color: #3cb371;
+      text-transform: capitalize;
+      margin: 0;
+    }
+  }
+
+  .userButton {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 16px;
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+    position: relative;
+    z-index: 2;
+
+    &:hover {
+      background: rgba(0, 0, 0, 0.02);
+      border-color: rgba(0, 0, 0, 0.12);
+    }
+
+    .userInfo {
+      display: flex;
+      align-items: center;
+      min-width: 0;
+      flex: 1;
+
+      .avatar {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        overflow: hidden;
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        margin-right: 10px;
+        flex-shrink: 0;
+
+        img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+      }
+
+      .nameWrapper {
+        flex: 1;
+        min-width: 0;
+        text-align: left;
+
+        .userName {
+          font-size: 14px;
+          font-weight: 500;
+          color: #1a1a1a;
+          margin: 0;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          line-height: 1.2;
+
+
+        }
+      }
+    }
+
+    .chevronIcon {
+      color: #999;
+      flex-shrink: 0;
+      margin-left: 8px;
+    }
+  }
+}

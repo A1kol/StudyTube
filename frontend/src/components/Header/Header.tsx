@@ -21,7 +21,6 @@ export default function Header({ isOpen, toggle }: HeaderProps) {
                             <span />
                             <span />
                         </div>
-                        <div className={classes.logo}></div>
                     </div>
 
                     <div className={classes.videoNameContainer}>
