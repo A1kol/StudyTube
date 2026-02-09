@@ -24,7 +24,7 @@ services:
 
   frontend:
     build:
-      context: ./frontend # Путь к папке, где лежит твой Dockerfile для Next.js
+      context: ./frontend
     container_name: studytube-frontend
     restart: always
     expose:
