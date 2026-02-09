@@ -51,7 +51,7 @@
                     display: flex;
                     justify-content: space-between;
 
-                    border-radius: 15px;
+                    border-radius: 0.95rem;
                     border: 1px solid rgb(179, 179, 179);
                     background: #fff;
 
@@ -66,7 +66,7 @@
                         justify-content: center;
                         gap: 7px;
 
-                        border-radius: 13px;
+                        border-radius: 0.95rem;
                         cursor: pointer;
 
                         transition: background-color 0.25s ease, transform 0.15s ease;
@@ -127,7 +127,7 @@
                     .autoScrollButton{
                         width: 73%;
                         height: 100%;
-                        border-radius: 15px;
+                        border-radius: 0.95rem;
                         border: 1px solid rgb(179, 179, 179);
                         display: flex;
                         align-items: center;
@@ -232,7 +232,7 @@
             width: 100%;
             height: 6.3%;
             border: 1px solid darkgray;
-            border-radius: 1.25rem;
+            border-radius: 0.95rem;
 
             padding: 4px 3px;
 
@@ -248,7 +248,7 @@
                 align-items: center;
                 gap: 8px;
 
-                border-radius: 1.25rem;
+                border-radius: 0.95rem;
                 cursor: pointer;
 
                 font-size: 14px;
@@ -315,7 +315,7 @@
             .backtCont{
                 width: 50%;
                 height: 100%;
-                border-radius: 1.25rem;
+                border-radius: 0.95rem;
                 display: flex;
                 flex-direction: column;
                 align-items: center;
@@ -344,7 +344,7 @@
         }
         .inputCont{
             border: 1px solid darkgray;
-            border-radius: 1.25rem;
+            border-radius: 0.95rem;
         }
 
         .inputCont {

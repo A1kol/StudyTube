@@ -1,0 +1,174 @@
+.wrapper {
+    width: 100vw;
+    height: 100vh;
+    background-color: #f4f7f9; 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    font-family: 'Inter', -apple-system, sans-serif;
+
+    background: url("../../../public/login/background.jpg");
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+
+.bgDecoration {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  .circle1, .circle2 {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+  }
+  .circle1 {
+    width: 400px;
+    height: 400px;
+    background: rgba(0, 173, 239, 0.08);
+    top: -100px;
+    right: -100px;
+  }
+  .circle2 {
+    width: 300px;
+    height: 300px;
+    background: rgba(108, 92, 231, 0.08);
+    bottom: -50px;
+    left: -50px;
+  }
+}
+
+.loginCard {
+  width: 100%;
+  max-width: 420px;
+  background: #ffffff;
+  padding: 40px;
+  border-radius: 24px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.04);
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+
+  transition: all 0.3s ease;
+}
+
+.toggleContainer {
+  display: flex;
+  position: relative;
+  background: #f0f2f5;
+  padding: 4px;
+  border-radius: 14px;
+  margin-bottom: 32px;
+}
+
+.slider {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: calc(50% - 4px);
+  height: calc(100% - 8px);
+  background: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 1;
+}
+
+.slideRight { transform: translateX(100%); }
+
+.toggleBtn {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  background: transparent;
+  font-size: 14px;
+  font-weight: 600;
+  color: #718096;
+  cursor: pointer;
+  z-index: 2;
+  transition: color 0.3s;
+  &.activeTab { color: #1a202c; }
+}
+
+.overflowContainer {
+  width: 100%;
+  min-height: 320px; 
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 28px;
+  h1 { font-size: 24px; color: #1a202c; margin-bottom: 8px; font-weight: 800; }
+  p { font-size: 14px; color: #718096; }
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  label { font-size: 13px; font-weight: 700; color: #4a5568; margin-left: 4px; }
+  input {
+    padding: 14px 16px;
+    border-radius: 12px;
+    border: 2px solid #edf2f7;
+    background: #f8fafc;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    outline: none;
+    &:focus {
+      border-color: #00adef;
+      background: #fff;
+      box-shadow: 0 0 0 4px rgba(0, 173, 239, 0.1);
+    }
+  }
+}
+
+.mainBtn {
+  margin-top: 10px;
+  padding: 14px;
+  background: #1a202c; 
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s, background 0.2s;
+  &:hover { background: #2d3748; transform: translateY(-1px); }
+  &:active { transform: translateY(0); }
+}
+
+.divider {
+  margin: 24px 0;
+  position: relative;
+  text-align: center;
+  &::before { content: ""; position: absolute; top: 50%; left: 0; width: 100%; height: 1px; background: #edf2f7; }
+  span { position: relative; background: #fff; padding: 0 12px; font-size: 12px; color: #a0aec0; font-weight: 600; }
+}
+
+.googleBtn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 12px;
+  background: #fff;
+  border: 2px solid #edf2f7;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #4a5568;
+  cursor: pointer;
+  transition: all 0.2s;
+  &:hover { background: #f8fafc; border-color: #e2e8f0; }
+}
