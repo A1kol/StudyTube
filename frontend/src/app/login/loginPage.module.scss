@@ -122,11 +122,13 @@
     border: 2px solid #edf2f7;
     background: #f8fafc;
     font-size: 14px;
+    color: #1a202c;
     transition: all 0.2s ease;
     outline: none;
     &:focus {
       border-color: #00adef;
       background: #fff;
+      color: #1a202c;
       box-shadow: 0 0 0 4px rgba(0, 173, 239, 0.1);
     }
   }
