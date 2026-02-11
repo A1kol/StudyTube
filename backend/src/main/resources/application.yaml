@@ -1,0 +1,32 @@
+spring:
+  application:
+    name: StudyTube
+
+  # Настройки БД (Spring возьмет URL из переменных окружения в docker-compose, если они есть)
+  datasource:
+    url: jdbc:postgresql://localhost:5432/studytube
+    username: user
+    password: password
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+  # Настройки Redis
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: 6379
+
+  ai:
+    ollama:
+      base-url: ${SPRING_AI_OLLAMA_BASE_URL:http://localhost:11434}
+      chat:
+        options:
+          model: llama3.2
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:your_very_long_random_string_with_at_least_32_characters_for_safety}
+    expiration: 86400000

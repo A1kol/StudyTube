@@ -1,0 +1,57 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16 # Специальный образ для Spring AI
+    container_name: studytube-db
+    restart: always
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: studytube
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d studytube"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: studytube-redis
+    restart: always
+    ports:
+      - "6379:6379"
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: studytube-frontend
+    restart: always
+    expose:
+      - "3000"
+
+  backend:
+    build: ./backend
+    container_name: studytube-backend
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy # Ждем, пока база реально будет готова
+      redis:
+        condition: service_started
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/studytube
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_AI_OLLAMA_BASE_URL=http://host.docker.internal:11434
+
+  nginx:
+    image: nginx:latest
+    container_name: studytube-nginx
+    restart: always
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+      - frontend
