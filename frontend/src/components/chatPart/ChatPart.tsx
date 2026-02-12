@@ -12,6 +12,9 @@ export default function ChatPart() {
     const editorRef = useRef<HTMLDivElement>(null);
     const scrollRef = useRef<HTMLDivElement>(null);
 
+    // В реальном приложении этот ID должен приходить из URL или пропсов
+    const videoId = "T7ZKNoB98ok";
+
     // Автопрокрутка чата вниз
     useEffect(() => {
         if (scrollRef.current) {
@@ -19,6 +22,7 @@ export default function ChatPart() {
         }
     }, [messages, isLoading]);
 
+    // ФУНКЦИЯ ОТПРАВКИ СООБЩЕНИЯ (с памятью Redis)
     const handleSendMessage = async () => {
         const text = editorRef.current?.innerText.trim();
         if (!text || isLoading) return;
@@ -31,9 +35,10 @@ export default function ChatPart() {
 
         try {
             const token = localStorage.getItem("token");
-            // Кодируем промпт для GET запроса
             const encodedPrompt = encodeURIComponent(text);
-            const response = await fetch(`http://localhost/api/v1/ai/ask?prompt=${encodedPrompt}`, {
+
+            // Добавили videoId в параметры, как прописали в контроллере
+            const response = await fetch(`http://localhost/api/v1/ai/ask?prompt=${encodedPrompt}&videoId=${videoId}`, {
                 method: "GET",
                 headers: {
                     "Authorization": `Bearer ${token}`,
@@ -49,7 +54,38 @@ export default function ChatPart() {
             }
         } catch (error) {
             console.error("Fetch error:", error);
-            setMessages(prev => [...prev, { role: 'ai', text: "Сервер недоступен (CORS или Offline)." }]);
+            setMessages(prev => [...prev, { role: 'ai', text: "Сервер недоступен." }]);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    // ФУНКЦИЯ ГЕНЕРАЦИИ КОНСПЕКТА (Summary)
+    const handleGetSummary = async () => {
+        // Здесь мы берем транскрипт (пока заглушка, либо берем из стейта, если он у тебя есть)
+        const transcriptText = "In today's gameplay video we will discuss...";
+
+        setIsLoading(true);
+        setActiveN("summary"); // Переключаем вкладку на Summary
+
+        try {
+            const token = localStorage.getItem("token");
+            // Используем POST, как договорились для больших текстов
+            const response = await fetch(`http://localhost/api/v1/ai/summary`, {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json"
+                },
+                body: transcriptText // Передаем текст в теле запроса
+            });
+
+            if (response.ok) {
+                const summaryResponse = await response.text();
+                setMessages(prev => [...prev, { role: 'ai', text: "SUMMARY:\n" + summaryResponse }]);
+            }
+        } catch (error) {
+            console.error("Summary error:", error);
         } finally {
             setIsLoading(false);
         }
@@ -69,7 +105,7 @@ export default function ChatPart() {
                     <div className={classes.videoCont}>
                         <iframe
                             className={classes.video}
-                            src="https://www.youtube.com/embed/T7ZKNoB98ok"
+                            src={`https://www.youtube.com/embed/${videoId}`}
                             title="YouTube video player"
                             frameBorder="0"
                             allowFullScreen
@@ -107,7 +143,7 @@ export default function ChatPart() {
                         <div className={`${classes.chat} ${activeN === "chat" ? classes.activeN : ""}`} onClick={() => setActiveN("chat")}>
                             <div className={classes.icon} />Chat
                         </div>
-                        <div className={`${classes.summary} ${activeN === "summary" ? classes.activeN : ""}`} onClick={() => setActiveN("summary")}>
+                        <div className={`${classes.summary} ${activeN === "summary" ? classes.activeN : ""}`} onClick={() => handleGetSummary()}>
                             <div className={classes.icon} />Summary
                         </div>
                         <div className={`${classes.notes} ${activeN === "notes" ? classes.activeN : ""}`} onClick={() => setActiveN("notes")}>
@@ -119,7 +155,7 @@ export default function ChatPart() {
                     <div className={classes.backt} style={{ height: '70%', justifyContent: 'flex-start', overflow: 'hidden' }}>
                         <div
                             ref={scrollRef}
-                            style={{ width: '100%', overflowY: 'auto', padding: '15px', display: 'flex', flexDirection: 'column', gap: '12px' }}
+                            style={{ width: '100%', height: '100%', overflowY: 'auto', padding: '15px', display: 'flex', flexDirection: 'column', gap: '12px' }}
                         >
                             {messages.length === 0 ? (
                                 <div className={classes.backtCont} style={{ marginTop: '20%' }}>
@@ -137,7 +173,8 @@ export default function ChatPart() {
                                             fontSize: '14px',
                                             background: m.role === 'user' ? '#f0f0f0' : '#e2e8f0',
                                             color: '#000',
-                                            border: m.role === 'user' ? '1px solid #d1d1d1' : 'none'
+                                            border: m.role === 'user' ? '1px solid #d1d1d1' : 'none',
+                                            whiteSpace: 'pre-wrap' // Чтобы конспект (summary) отображался красиво с переносами
                                         }}>
                                             {m.text}
                                         </div>
