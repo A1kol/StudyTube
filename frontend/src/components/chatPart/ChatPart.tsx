@@ -33,7 +33,7 @@ export default function ChatPart() {
             const token = localStorage.getItem("token");
             // Кодируем промпт для GET запроса
             const encodedPrompt = encodeURIComponent(text);
-            const response = await fetch(`http://localhost:8080/api/v1/ai/ask?prompt=${encodedPrompt}`, {
+            const response = await fetch(`http://localhost/api/v1/ai/ask?prompt=${encodedPrompt}`, {
                 method: "GET",
                 headers: {
                     "Authorization": `Bearer ${token}`,

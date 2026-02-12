@@ -24,32 +24,48 @@ public class JwtFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
 
-        // 1. Берем заголовок Authorization
+        // 1. ВАЖНО ДЛЯ CORS: Пропускаем OPTIONS запросы без проверки JWT
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            response.setStatus(HttpServletResponse.SC_OK);
+            return;
+        }
+
+        // 2. Достаем заголовок
         String authHeader = request.getHeader("Authorization");
 
-        // 2. Если токена нет или он не начинается с Bearer — пропускаем запрос дальше (может это регистрация?)
+        // 3. Если заголовка нет или он не Bearer — идем дальше по цепочке
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        // 3. Вырезаем сам токен из строки "Bearer <token>"
+        // 4. Вырезаем токен
         String token = authHeader.substring(7);
-        String username = jwtService.extractUsername(token);
 
-        // 4. Если имя есть и юзер еще не авторизован в этой сессии
-        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            if (jwtService.isTokenValid(token)) {
-                // Создаем "пропуск" для Spring Security
-                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        username, null, Collections.emptyList()
-                );
-                // Кладем его в контекст (теперь юзер залогинен на время этого запроса)
-                SecurityContextHolder.getContext().setAuthentication(authToken);
+        try {
+            String username = jwtService.extractUsername(token);
+
+            // 5. Если имя есть и в текущем потоке (SecurityContext) пусто
+            if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                if (jwtService.isTokenValid(token)) {
+                    // Создаем объект аутентификации
+                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                            username,
+                            null,
+                            Collections.emptyList()
+                    );
+
+                    // Кладем в контекст — теперь Spring знает, что юзер "свой"
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                }
             }
+        } catch (Exception e) {
+            // Если токен кривой или просрочен — просто логируем или идем дальше.
+            // Spring Security сам вернет 403, так как контекст останется пустым.
+            System.err.println("JWT Error: " + e.getMessage());
         }
 
-        // 5. Идем дальше по цепочке
+        // 6. Обязательно передаем управление следующему фильтру
         filterChain.doFilter(request, response);
     }
 }
