@@ -50,7 +50,10 @@ export default function LogIn() {
         localStorage.setItem("username", data.name);
         router.push("/");
       } else {
-        setIsLogin(true);
+        const data = await res.json();
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("username", data.name);
+        router.push("/");
       }
     } catch (err: any) {
       setError(err.message || "Something went wrong");

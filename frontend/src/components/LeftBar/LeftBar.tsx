@@ -1,7 +1,8 @@
 "use client";
 import classes from "./LeftBar.module.scss";
 import { useState, useEffect, useRef } from "react";
-import UserSetModal from "../userSettingModal/userSetModal";
+import UserSetModal from "../UserSettingModal/UserSetModal";
+import { useRouter } from "next/navigation";
 
 interface LeftBarProps {
   isOpen: boolean;
@@ -13,6 +14,78 @@ export default function LeftBar({ isOpen, recentItemsFromBackend = [] }: LeftBar
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null); 
+
+  const [username, setUsername] = useState<string>("");
+
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [videoUrl, setVideoUrl] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const router = useRouter();
+
+  const [items, setItems] = useState(recentItemsFromBackend);
+
+  useEffect(() => {
+    setItems(recentItemsFromBackend);
+  }, [recentItemsFromBackend]);
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("username");
+    router.push("/login");
+  };
+
+const handleAddVideo = async () => {
+    if (!videoUrl.trim()) return;
+    
+    try {
+        setIsSubmitting(true);
+        const token = localStorage.getItem("token");
+
+        // Формируем URL с параметром. Важно использовать encodeURIComponent для ссылки!
+        const apiUrl = `http://localhost:8080/api/videos/add?url=${encodeURIComponent(videoUrl.trim())}`;
+
+        const response = await fetch(`http://localhost:8080/api/videos/add`, {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${token}`,
+                "Content-Type": "application/x-www-form-urlencoded", // Для RequestParam
+            },
+            body: new URLSearchParams({ url: videoUrl.trim() }) // Отправляем как форму
+        });
+
+        console.log("Status Code:", response.status);
+
+        if (response.status === 403) {
+            console.error("Доступ запрещен (403). Проверь: 1. Валидность JWT. 2. Права пользователя (Role). 3. Настройку CORS на бэкенде.");
+            alert("Ошибка 403: Недостаточно прав или сессия истекла");
+            return;
+        }
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Ошибка сервера: ${response.status} ${errorText}`);
+        }
+
+        const newVideo = await response.json();
+        setItems(prev => [newVideo, ...prev]);
+        setVideoUrl("");
+        setIsAddModalOpen(false);
+
+        router.push(`/?v=${newVideo.youtubeId}`);
+    } catch (error) {
+        console.error("Full Error Info:", error);
+        alert(error instanceof Error ? error.message : "Неизвестная ошибка");
+    } finally {
+        setIsSubmitting(false);
+    }
+};
+  useEffect(() => {
+    const storedName = localStorage.getItem("username");
+    if (storedName) {
+      setUsername(storedName);
+    }
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -26,6 +99,10 @@ export default function LeftBar({ isOpen, recentItemsFromBackend = [] }: LeftBar
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isMenuOpen]);
 
+
+
+
+
   return (
     <>
       <div className={`${classes.wrapper} ${isOpen ? classes.open : ""}`}>
@@ -37,7 +114,10 @@ export default function LeftBar({ isOpen, recentItemsFromBackend = [] }: LeftBar
 
           <div className={classes.mainButtons}>
             <div className={classes.navGroup}>
-              <button className={classes.navItem}>
+              <button 
+                className={classes.navItem}
+                onClick={() => setIsAddModalOpen(true)}
+              >
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>
                 <span>Add content</span>
               </button>
@@ -73,8 +153,8 @@ export default function LeftBar({ isOpen, recentItemsFromBackend = [] }: LeftBar
             <div className={classes.section}>
               <p className={classes.sectionTitle}>Recents</p>
               <div className={classes.group}>
-                {recentItemsFromBackend.length > 0 ? (
-                  recentItemsFromBackend.map((item) => {
+                {items && items.length > 0 ? (
+                  items.map((item) => {
                     const isActive = activeId === item.id;
                     return (
                       <button
@@ -83,9 +163,13 @@ export default function LeftBar({ isOpen, recentItemsFromBackend = [] }: LeftBar
                         className={`${classes.navButton} ${isActive ? classes.active : ""}`}
                       >
                         <div className={classes.iconContainer}>
-                          {isActive ? <div className={classes.statusDotActive}></div> : 
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={classes.icon}><polygon points="5 3 19 12 5 21 5 3" /></svg>
-                          }
+                          {isActive ? (
+                            <div className={classes.statusDotActive}></div>
+                          ) : (
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={classes.icon}>
+                              <polygon points="5 3 19 12 5 21 5 3" />
+                            </svg>
+                          )}
                         </div>
                         <span className={classes.truncate}>{item.title}</span>
                       </button>
@@ -132,7 +216,7 @@ export default function LeftBar({ isOpen, recentItemsFromBackend = [] }: LeftBar
                 Dark Mode
               </button>
               <div className={classes.divider}></div>
-              <button className={`${classes.menuItem} ${classes.logout}`}>
+              <button className={`${classes.menuItem} ${classes.logout}`} onClick={handleLogout}>
                 <svg 
                   width="16" 
                   height="16" 
@@ -168,7 +252,7 @@ export default function LeftBar({ isOpen, recentItemsFromBackend = [] }: LeftBar
                 <img draggable="false" src="https://lh3.googleusercontent.com/a/ACg8ocKMeWGFRPZyCAByPwWqRT1jL9b0ftQZ4LFguAxumFsbpYSrxAsm=s96-c" alt="Avatar" />
               </span>
               <div className={classes.nameWrapper}>
-                <p className={classes.userName}>Алихан Искендербеков</p>
+                <p className={classes.userName}>{username}</p>
               </div>
             </div>
             <svg 
@@ -183,6 +267,42 @@ export default function LeftBar({ isOpen, recentItemsFromBackend = [] }: LeftBar
 
       {isSettingsOpen && (
         <UserSetModal onClose={() => setIsSettingsOpen(false)} />
+      )}
+
+      {isAddModalOpen && (
+        <div className={classes.modalOverlay} onClick={() => setIsAddModalOpen(false)}>
+          <div 
+            className={classes.modal}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3>Add YouTube Video</h3>
+
+            <input
+              type="text"
+              placeholder="Paste YouTube URL here..."
+              value={videoUrl}
+              onChange={(e) => setVideoUrl(e.target.value)}
+              className={classes.input}
+            />
+
+            <div className={classes.modalButtons}>
+              <button 
+                className={classes.cancelBtn}
+                onClick={() => setIsAddModalOpen(false)}
+              >
+                Cancel
+              </button>
+
+              <button 
+                className={classes.submitBtn}
+                onClick={handleAddVideo}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? "Adding..." : "Add"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </>
   );

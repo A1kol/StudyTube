@@ -1,5 +1,5 @@
 "use client";
-import classes from "./UserSetModal.module.scss";
+import classes from "./UserSet.module.scss";
 
 interface UserSetModalProps {
   onClose: () => void;
