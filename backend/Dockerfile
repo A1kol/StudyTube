@@ -1,24 +1,29 @@
-# Этап сборки (тут всё оставляем как есть)
+# --- Этап сборки ---
 FROM maven:3.9.4-eclipse-temurin-21 AS build
-COPY . .
+WORKDIR /app
+
+# 1. Кэшируем зависимости Maven
+# Копируем ТОЛЬКО pom.xml. Если он не менялся, зависимости не будут качаться заново
+COPY pom.xml .
+RUN mvn dependency:go-offline
+
+# 2. Копируем исходники и собираем
+COPY src ./src
 RUN mvn clean package -DskipTests
 
-# Этап запуска
+# --- Этап запуска ---
 FROM eclipse-temurin:21-jre
 
-# 1. Устанавливаем Python и pip
-# Мы используем apt-get, так как temurin базируется на Ubuntu/Debian
+# 1. Оптимизируем установку Python (слой будет закэширован)
 RUN apt-get update && apt-get install -y \
     python3 \
     python3-pip \
     && rm -rf /var/lib/apt/lists/*
 
-# 2. Устанавливаем саму библиотеку
-# Флаг --break-system-packages нужен в новых версиях Python в Debian/Ubuntu
+# 2. Кэшируем установку библиотеки Python
 RUN pip3 install --no-cache-dir youtube-transcript-api --break-system-packages
 
-# 3. Копируем наш JAR
-COPY --from=build /target/*.jar app.jar
+# 3. Копируем готовый JAR (этот слой меняется чаще всего)
+COPY --from=build /app/target/*.jar app.jar
 
-# Запускаем
 ENTRYPOINT ["java", "-jar", "/app.jar"]

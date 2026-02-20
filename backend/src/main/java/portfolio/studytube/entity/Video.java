@@ -2,6 +2,8 @@ package portfolio.studytube.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+
 import java.time.LocalDateTime;
 
 @Entity
@@ -16,7 +18,7 @@ public class Video {
     private Long id;
 
     @Column(unique = true, nullable = false)
-    private String youtubeId; // ID из ссылки (например, dQw4w9WgXcQ)
+    private String youtubeId;
 
     private String title;
 
@@ -24,12 +26,4 @@ public class Video {
     private String description;
 
     private String thumbnailUrl;
-
-    private String category;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    private User addedBy;
-
-    private LocalDateTime createdAt = LocalDateTime.now();
 }

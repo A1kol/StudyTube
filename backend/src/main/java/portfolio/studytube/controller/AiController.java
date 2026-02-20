@@ -1,7 +1,9 @@
 package portfolio.studytube.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import portfolio.studytube.entity.User;
 import portfolio.studytube.service.AiService;
 
 @RestController
@@ -15,11 +17,9 @@ public class AiController {
     public String askAi(
             @RequestParam String prompt,
             @RequestParam String videoId,
-            @RequestHeader("Authorization") String authHeader
-    ) {
+            @AuthenticationPrincipal User user) {
         // Здесь можно через jwtService вытащить именно ID, а не слать весь токен в ключ
-        String userId = authHeader.substring(7);
-        return aiService.processAsk(userId, videoId, prompt);
+        return aiService.processAsk(user.getId(), videoId, prompt);
     }
 
     @PostMapping("/summary") // Поменял на POST для больших текстов

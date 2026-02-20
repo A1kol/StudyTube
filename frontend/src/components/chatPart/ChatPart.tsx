@@ -2,90 +2,211 @@
 import classes from "./ChatPart.module.scss"
 import { useState, useRef, useEffect } from "react"
 
-export default function ChatPart() {
-    const [active, setActive] = useState<"chapters" | "transcript">("chapters");
+interface ChatPartProps {
+    youtubeId?: string;
+    videoUrl?: string;
+}
+
+export default function ChatPart({ youtubeId }: ChatPartProps) {
+    const [active, setActive] = useState<"transcript">("transcript");
     const [activeN, setActiveN] = useState<"chat" | "summary" | "notes">("chat");
 
-    // ЛОГИКА ЧАТА
+    const [transcriptData, setTranscriptData] = useState<{content: string, chunks: string} | null>(null);
+    const [isTimestampMode, setIsTimestampMode] = useState(false);
+    const [dbId, setDbId] = useState<number | null>(null);
+
+    const [isScrollDirectionDown, setIsScrollDirectionDown] = useState(true);
+
     const [messages, setMessages] = useState<{role: 'user' | 'ai', text: string}[]>([]);
     const [isLoading, setIsLoading] = useState(false);
+
     const editorRef = useRef<HTMLDivElement>(null);
     const scrollRef = useRef<HTMLDivElement>(null);
+    const transcriptScrollRef = useRef<HTMLDivElement>(null);
 
-    // В реальном приложении этот ID должен приходить из URL или пропсов
-    const videoId = "T7ZKNoB98ok";
+    const currentYoutubeId = youtubeId || "T7ZKNoB98ok";
 
-    // Автопрокрутка чата вниз
+    // Функция для заголовков (исправленная для билда)
+    const getAuthHeaders = (): Record<string, string> => {
+        if (typeof window === 'undefined') return {};
+        const token = localStorage.getItem("token");
+        return {
+            "Authorization": `Bearer ${token || ""}`,
+            "Content-Type": "application/json"
+        };
+    };
+
+    // Синхронизация с БД (Личная библиотека пользователя)
+    useEffect(() => {
+        const syncVideoWithDb = async () => {
+            try {
+                // Шлем запрос на добавление видео в библиотеку юзера
+                const response = await fetch(`/api/videos/add?url=${currentYoutubeId}`, {
+                    method: 'POST',
+                    headers: getAuthHeaders()
+                });
+
+                if (response.ok) {
+                    const data = await response.json(); // Теперь получаем UserVideo
+                    // Извлекаем id именно сущности Video для работы с транскриптом
+                    if (data && data.video && data.video.id) {
+                        setDbId(data.video.id);
+                    }
+                }
+            } catch (error) {
+                console.error("Ошибка синхронизации:", error);
+            }
+        };
+
+        if (currentYoutubeId) {
+            setTranscriptData(null);
+            setDbId(null);
+            setMessages([]);
+            syncVideoWithDb();
+        }
+    }, [currentYoutubeId]);
+
+    // Загрузка транскрипта по dbId
+    useEffect(() => {
+        let timer: NodeJS.Timeout;
+
+        const fetchTranscript = async () => {
+            if (!dbId) return;
+            try {
+                const response = await fetch(`/api/transcripts/${dbId}/full`, {
+                    headers: getAuthHeaders()
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    setTranscriptData(data);
+                } else if (response.status === 404) {
+                    // Если транскрипт еще не готов (в процессе парсинга), опрашиваем снова
+                    timer = setTimeout(fetchTranscript, 2000);
+                }
+            } catch (error) {
+                console.error("Ошибка загрузки транскрипта:", error);
+            }
+        };
+
+        fetchTranscript();
+        return () => clearTimeout(timer);
+    }, [dbId]);
+
+    // Автоскролл чата при новых сообщениях
     useEffect(() => {
         if (scrollRef.current) {
             scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
         }
     }, [messages, isLoading]);
 
-    // ФУНКЦИЯ ОТПРАВКИ СООБЩЕНИЯ (с памятью Redis)
+    // Логика мягкого скролла транскрипта
+    const slowScrollTo = (target: number) => {
+        const container = transcriptScrollRef.current;
+        if (!container) return;
+
+        const start = container.scrollTop;
+        const change = target - start;
+        const duration = 1200;
+        let startTime: number | null = null;
+
+        const easeInOutQuad = (t: number, b: number, c: number, d: number) => {
+            t /= d / 2;
+            if (t < 1) return (c / 2) * t * t + b;
+            t--;
+            return (-c / 2) * (t * (t - 2) - 1) + b;
+        };
+
+        const animateScroll = (currentTime: number) => {
+            if (startTime === null) startTime = currentTime;
+            const progress = currentTime - startTime;
+            const val = easeInOutQuad(progress, start, change, duration);
+            container.scrollTop = val;
+
+            if (progress < duration) {
+                requestAnimationFrame(animateScroll);
+            } else {
+                container.scrollTop = target;
+            }
+        };
+        requestAnimationFrame(animateScroll);
+    };
+
+    const handleToggleScroll = () => {
+        if (!transcriptScrollRef.current) return;
+        const container = transcriptScrollRef.current;
+        if (isScrollDirectionDown) {
+            slowScrollTo(container.scrollHeight);
+        } else {
+            slowScrollTo(0);
+        }
+        setIsScrollDirectionDown(!isScrollDirectionDown);
+    };
+
+    // Рендер таймкодов
+    const renderChunks = () => {
+        if (!transcriptData?.chunks) return <div style={{color: '#000'}}>Таймкодов нет в БД</div>;
+
+        try {
+            let parsed = typeof transcriptData.chunks === 'string' ? JSON.parse(transcriptData.chunks) : transcriptData.chunks;
+            if (Array.isArray(parsed) && Array.isArray(parsed[0])) parsed = parsed[0];
+            if (!Array.isArray(parsed)) return <div style={{color: '#000'}}>Ошибка: Данные не в виде массива</div>;
+
+            return parsed.map((item: any, idx: number) => (
+                <div key={idx} style={{ marginBottom: '10px', display: 'flex', gap: '10px' }}>
+                    <span style={{ color: '#007AFF', fontWeight: 'bold', minWidth: '45px' }}>
+                        {Math.floor(item.start / 60)}:{(Math.floor(item.start % 60)).toString().padStart(2, '0')}
+                    </span>
+                    <span style={{ color: '#000' }}>{item.text}</span>
+                </div>
+            ));
+        } catch (e) {
+            return <div style={{color: '#000'}}>Ошибка отображения таймкодов</div>;
+        }
+    };
+
+    // Отправка сообщений в AI чат
     const handleSendMessage = async () => {
         const text = editorRef.current?.innerText.trim();
         if (!text || isLoading) return;
 
-        const userMsg = { role: 'user' as const, text };
-        setMessages(prev => [...prev, userMsg]);
-
+        setMessages(prev => [...prev, { role: 'user', text }]);
         if (editorRef.current) editorRef.current.innerText = "";
         setIsLoading(true);
 
         try {
-            const token = localStorage.getItem("token");
-            const encodedPrompt = encodeURIComponent(text);
-
-            // Добавили videoId в параметры, как прописали в контроллере
-            const response = await fetch(`http://localhost/api/v1/ai/ask?prompt=${encodedPrompt}&videoId=${videoId}`, {
+            const response = await fetch(`/api/v1/ai/ask?prompt=${encodeURIComponent(text)}&videoId=${currentYoutubeId}`, {
                 method: "GET",
-                headers: {
-                    "Authorization": `Bearer ${token}`,
-                    "Accept": "text/plain"
-                }
+                headers: getAuthHeaders()
             });
-
             if (response.ok) {
                 const aiResponse = await response.text();
                 setMessages(prev => [...prev, { role: 'ai', text: aiResponse }]);
-            } else {
-                setMessages(prev => [...prev, { role: 'ai', text: "Ошибка доступа. Проверь авторизацию." }]);
             }
         } catch (error) {
-            console.error("Fetch error:", error);
-            setMessages(prev => [...prev, { role: 'ai', text: "Сервер недоступен." }]);
+            console.error(error);
         } finally {
             setIsLoading(false);
         }
     };
 
-    // ФУНКЦИЯ ГЕНЕРАЦИИ КОНСПЕКТА (Summary)
+    // Получение саммари
     const handleGetSummary = async () => {
-        // Здесь мы берем транскрипт (пока заглушка, либо берем из стейта, если он у тебя есть)
-        const transcriptText = "In today's gameplay video we will discuss...";
-
+        const textToSummarize = transcriptData?.content || "Текст еще не загружен";
         setIsLoading(true);
-        setActiveN("summary"); // Переключаем вкладку на Summary
-
+        setActiveN("summary");
         try {
-            const token = localStorage.getItem("token");
-            // Используем POST, как договорились для больших текстов
-            const response = await fetch(`http://localhost/api/v1/ai/summary`, {
+            const response = await fetch(`/api/v1/ai/summary`, {
                 method: "POST",
-                headers: {
-                    "Authorization": `Bearer ${token}`,
-                    "Content-Type": "application/json"
-                },
-                body: transcriptText // Передаем текст в теле запроса
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ text: textToSummarize, videoId: currentYoutubeId })
             });
-
             if (response.ok) {
                 const summaryResponse = await response.text();
-                setMessages(prev => [...prev, { role: 'ai', text: "SUMMARY:\n" + summaryResponse }]);
+                setMessages(prev => [...prev, { role: 'ai', text: "📝 SUMMARY:\n\n" + summaryResponse }]);
             }
         } catch (error) {
-            console.error("Summary error:", error);
+            console.error(error);
         } finally {
             setIsLoading(false);
         }
@@ -98,109 +219,113 @@ export default function ChatPart() {
         }
     };
 
-    return(
-        <>
-            <div className={classes.wrapper}>
-                <div className={classes.leftPart}>
-                    <div className={classes.videoCont}>
-                        <iframe
-                            className={classes.video}
-                            src={`https://www.youtube.com/embed/${videoId}`}
-                            title="YouTube video player"
-                            frameBorder="0"
-                            allowFullScreen
-                         />
-                    </div>
-                    <div className={classes.AboutMCont}>
-                        <div className={classes.aboutNav}>
-                            <div className={classes.aboutNavL}>
-                                <div className={`${classes.chapters} ${active === "chapters" ? classes.active : ""}`} onClick={() => setActive("chapters")}>
-                                    <div className={classes.icon} />
-                                    <p className={classes.Name}>Chapters</p>
-                                </div>
-                                <div className={`${classes.transcript} ${active === "transcript" ? classes.active : ""}`} onClick={() => setActive("transcript")}>
-                                    <div className={classes.icon} />
-                                    <p className={classes.Name}>Transcript</p>
-                                </div>
-                            </div>
-                            <div className={classes.aboutNavR}>
-                                <div className={classes.autoScrollButton}><div className={classes.arrows} />Auto Scroll</div>
-                                <div className={classes.closeArrow}><div className={classes.arrow}></div></div>
-                            </div>
-                        </div>
-                        <div className={classes.aboutScroller}>
-                            <div className={classes.block}>
-                                <div className={classes.time}>##:##</div>
-                                <div className={classes.blockTitle}>Game Introduction</div>
-                                <div className={classes.blockText}>In today's gameplay video...</div>
-                            </div>
-                        </div>
-                    </div>
+    return (
+        <div className={classes.wrapper}>
+            <div className={classes.leftPart}>
+                <div className={classes.videoCont}>
+                    <iframe
+                        key={currentYoutubeId}
+                        className={classes.video}
+                        src={`https://www.youtube.com/embed/${currentYoutubeId}`}
+                        title="YouTube video player"
+                        frameBorder="0"
+                        allowFullScreen
+                    />
                 </div>
-
-                <div className={classes.rightPart}>
-                    <div className={classes.navbar}>
-                        <div className={`${classes.chat} ${activeN === "chat" ? classes.activeN : ""}`} onClick={() => setActiveN("chat")}>
-                            <div className={classes.icon} />Chat
+                <div className={classes.AboutMCont}>
+                    <div className={classes.aboutNav}>
+                        <div className={classes.aboutNavL}>
+                            <div
+                                className={`${classes.transcript} ${!isTimestampMode ? classes.active : ""}`}
+                                onClick={() => setIsTimestampMode(false)}
+                            >
+                                <div className={classes.icon} />
+                                <p className={classes.Name}>Transcript</p>
+                            </div>
+                            <div
+                                className={`${classes.transcript} ${isTimestampMode ? classes.active : ""}`}
+                                onClick={() => setIsTimestampMode(true)}
+                            >
+                                <div className={classes.icon} />
+                                <p className={classes.Name}>Timestamps</p>
+                            </div>
                         </div>
-                        <div className={`${classes.summary} ${activeN === "summary" ? classes.activeN : ""}`} onClick={() => handleGetSummary()}>
-                            <div className={classes.icon} />Summary
-                        </div>
-                        <div className={`${classes.notes} ${activeN === "notes" ? classes.activeN : ""}`} onClick={() => setActiveN("notes")}>
-                            <div className={classes.icon} />Notes
+                        <div className={classes.aboutNavR}>
+                            <div
+                                className={classes.autoScrollButton}
+                                onClick={handleToggleScroll}
+                                style={{ cursor: 'pointer' }}
+                            >
+                                <div className={classes.arrows} />
+                                {isScrollDirectionDown ? "Scroll Down" : "Scroll Up"}
+                            </div>
                         </div>
                     </div>
-
-                    {/* ОСНОВНАЯ ЧАСТЬ ЧАТА */}
-                    <div className={classes.backt} style={{ height: '70%', justifyContent: 'flex-start', overflow: 'hidden' }}>
-                        <div
-                            ref={scrollRef}
-                            style={{ width: '100%', height: '100%', overflowY: 'auto', padding: '15px', display: 'flex', flexDirection: 'column', gap: '12px' }}
-                        >
-                            {messages.length === 0 ? (
-                                <div className={classes.backtCont} style={{ marginTop: '20%' }}>
-                                    <div className={classes.logo}></div>
-                                    <div className={classes.title}>
-                                        <p className={classes.name}>Learn with StudyAI</p>
+                    <div className={classes.aboutScroller} ref={transcriptScrollRef} style={{ overflowY: 'auto' }}>
+                        <div style={{ padding: '10px' }}>
+                            {isTimestampMode ? renderChunks() : (
+                                <div className={classes.block}>
+                                    <div className={classes.blockText} style={{ lineHeight: '1.7', whiteSpace: 'pre-wrap', color: '#000' }}>
+                                        {transcriptData?.content || "Загрузка транскрипта..."}
                                     </div>
                                 </div>
-                            ) : (
-                                messages.map((m, i) => (
-                                    <div key={i} style={{ alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start', maxWidth: '80%' }}>
-                                        <div style={{
-                                            padding: '10px 14px',
-                                            borderRadius: '15px',
-                                            fontSize: '14px',
-                                            background: m.role === 'user' ? '#f0f0f0' : '#e2e8f0',
-                                            color: '#000',
-                                            border: m.role === 'user' ? '1px solid #d1d1d1' : 'none',
-                                            whiteSpace: 'pre-wrap' // Чтобы конспект (summary) отображался красиво с переносами
-                                        }}>
-                                            {m.text}
-                                        </div>
-                                    </div>
-                                ))
                             )}
-                            {isLoading && <p style={{ fontSize: '12px', color: '#9ca3af', marginLeft: '10px' }}>AI is typing...</p>}
-                        </div>
-                    </div>
-
-                    <div className={classes.inputCont}>
-                        <div className={classes.editorWrapper}>
-                            <div
-                                ref={editorRef}
-                                className={classes.editor}
-                                contentEditable
-                                role="textbox"
-                                spellCheck={true}
-                                data-placeholder="Learn anything"
-                                suppressContentEditableWarning
-                                onKeyDown={onKeyDown}
-                            ></div>
                         </div>
                     </div>
                 </div>
             </div>
-        </>
-    )
+
+            <div className={classes.rightPart}>
+                <div className={classes.navbar}>
+                    <div className={`${classes.chat} ${activeN === "chat" ? classes.activeN : ""}`} onClick={() => setActiveN("chat")}>
+                        <div className={classes.icon} />Chat
+                    </div>
+                    <div className={`${classes.summary} ${activeN === "summary" ? classes.activeN : ""}`} onClick={handleGetSummary}>
+                        <div className={classes.icon} />Summary
+                    </div>
+                </div>
+
+                <div className={classes.backt} style={{ height: '70%', overflow: 'hidden' }}>
+                    <div ref={scrollRef} style={{ width: '100%', height: '100%', overflowY: 'auto', padding: '15px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        {messages.length === 0 ? (
+                            <div className={classes.backtCont} style={{ marginTop: '20%' }}>
+                                <div className={classes.logo}></div>
+                                <div className={classes.title}><p className={classes.name}>StudyTube AI</p></div>
+                            </div>
+                        ) : (
+                            messages.map((m, i) => (
+                                <div key={i} style={{ alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start', maxWidth: '85%' }}>
+                                    <div style={{
+                                        padding: '12px 16px',
+                                        borderRadius: '15px',
+                                        fontSize: '14px',
+                                        background: m.role === 'user' ? '#007AFF' : '#E9E9EB',
+                                        color: m.role === 'user' ? '#fff' : '#000',
+                                        whiteSpace: 'pre-wrap'
+                                    }}>
+                                        {m.text}
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                        {isLoading && <p style={{ fontSize: '12px', color: '#8e8e93', marginLeft: '10px' }}>AI думает...</p>}
+                    </div>
+                </div>
+
+                <div className={classes.inputCont}>
+                    <div className={classes.editorWrapper}>
+                        <div
+                            ref={editorRef}
+                            className={classes.editor}
+                            contentEditable
+                            role="textbox"
+                            data-placeholder="Спроси что-нибудь..."
+                            suppressContentEditableWarning
+                            onKeyDown={onKeyDown}
+                        ></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
 }
