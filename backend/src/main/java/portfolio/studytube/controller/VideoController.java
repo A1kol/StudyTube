@@ -23,12 +23,8 @@ public class VideoController {
                                               @RequestParam(required = false, defaultValue = "General") String category,
                                               @AuthenticationPrincipal User user) {
 
-        // 1. Достаем юзера по email из токена (Principal)
-
-        // 2. Извлекаем youtubeId из URL (простая логика для примера)
         String youtubeId = extractYoutubeId(url);
 
-        // 3. Сохраняем через твой VideoLibraryService
         UserVideo result = videoLibraryService.addVideoToUserLibrary(youtubeId, user, category);
 
         return ResponseEntity.ok(result);
@@ -40,6 +36,6 @@ public class VideoController {
         } else if (url.contains("youtu.be/")) {
             return url.split("youtu.be/")[1].split("\\?")[0];
         }
-        return url; // Если уже пришел ID
+        return url;
     }
 }

@@ -72,10 +72,14 @@ export default function ChatPart({ youtubeId }: ChatPartProps) {
 
         const fetchTranscript = async () => {
             if (!dbId) return;
+            const token = localStorage.getItem("token");
+
             try {
                 const response = await fetch(`/api/transcripts/${dbId}/full`, {
-                    method: 'GET',
-                    headers: getAuthHeaders()
+                    method: "GET",
+                    headers: {
+                        "Authorization": `Bearer ${token}`
+                    }
                 });
 
                 if (response.ok) {

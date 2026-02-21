@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import portfolio.studytube.entity.User;
 import portfolio.studytube.entity.UserVideo;
 import portfolio.studytube.entity.Video;
+import portfolio.studytube.repository.UserRepository;
 import portfolio.studytube.repository.UserVideoRepository;
 
 import java.time.LocalDateTime;
@@ -17,13 +18,18 @@ import java.util.Optional;
 public class VideoLibraryService {
 
     private final UserVideoRepository userVideoRepository;
-    private final VideoService videoService; // Добавляем сервис для работы с метаданными
+    private final VideoService videoService;
+    private final UserRepository userRepository;// Добавляем сервис для работы с метаданными
 
     @Transactional
-    public UserVideo addVideoToUserLibrary(String youtubeId, User user, String category) {
+    public UserVideo addVideoToUserLibrary(String youtubeId, User userFromFilter, String category) {
 
         // 1. Используем VideoService, чтобы получить видео БЕЗ заглушек (уже с Title и Thumb)
         Video video = videoService.getOrCreateVideo(youtubeId);
+
+        User user = (userFromFilter.getId() != null) ? userFromFilter :
+                userRepository.findByName(userFromFilter.getName())
+                        .orElseThrow(() -> new RuntimeException("User not found in DB"));
 
         // 2. Проверяем, есть ли уже связь этого юзера с этим видео
         Optional<UserVideo> existingLink = userVideoRepository.findByUserAndVideo(user, video);
