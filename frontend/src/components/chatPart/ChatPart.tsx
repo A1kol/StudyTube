@@ -10,6 +10,7 @@ interface ChatPartProps {
 export default function ChatPart({ youtubeId }: ChatPartProps) {
     const [active, setActive] = useState<"transcript">("transcript");
     const [activeN, setActiveN] = useState<"chat" | "summary" | "notes">("chat");
+    const [category, setCategory] = useState("General");
 
     const [transcriptData, setTranscriptData] = useState<{content: string, chunks: string} | null>(null);
     const [isTimestampMode, setIsTimestampMode] = useState(false);
@@ -32,7 +33,6 @@ export default function ChatPart({ youtubeId }: ChatPartProps) {
         const token = localStorage.getItem("token");
         return {
             "Authorization": `Bearer ${token}`,
-            "Content-Type": "application/json"
         };
     };
 
@@ -41,7 +41,7 @@ export default function ChatPart({ youtubeId }: ChatPartProps) {
         const syncVideoWithDb = async () => {
             try {
                 // Шлем запрос на добавление видео в библиотеку юзера
-                const response = await fetch(`/api/videos/add?url=${currentYoutubeId}`, {
+                const response = await fetch(`/api/videos/add?url=${currentYoutubeId}&category=${encodeURIComponent(category)}`, {
                     method: 'POST',
                     headers: getAuthHeaders()
                 });
@@ -76,10 +76,8 @@ export default function ChatPart({ youtubeId }: ChatPartProps) {
 
             try {
                 const response = await fetch(`/api/transcripts/${dbId}/full`, {
-                    method: "GET",
-                    headers: {
-                        "Authorization": `Bearer ${token}`
-                    }
+                    method: 'GET',
+                     headers: getAuthHeaders()
                 });
 
                 if (response.ok) {
@@ -182,11 +180,8 @@ export default function ChatPart({ youtubeId }: ChatPartProps) {
 
         try {
             const response = await fetch(`/api/v1/ai/ask?prompt=${encodeURIComponent(text)}&videoId=${currentYoutubeId}`, {
-                method: "GET",
-                headers: {
-                     "Authorization": `Bearer ${token}`
-                    }
-
+                method: 'GET',
+                 headers: getAuthHeaders()
             });
             if (response.ok) {
                 const aiResponse = await response.text();
