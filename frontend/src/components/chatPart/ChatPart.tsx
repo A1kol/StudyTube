@@ -31,7 +31,7 @@ export default function ChatPart({ youtubeId }: ChatPartProps) {
         if (typeof window === 'undefined') return {};
         const token = localStorage.getItem("token");
         return {
-            "Authorization": `Bearer ${token || ""}`,
+            "Authorization": `Bearer ${token}`,
             "Content-Type": "application/json"
         };
     };
@@ -74,6 +74,7 @@ export default function ChatPart({ youtubeId }: ChatPartProps) {
             if (!dbId) return;
             try {
                 const response = await fetch(`/api/transcripts/${dbId}/full`, {
+                    method: 'GET',
                     headers: getAuthHeaders()
                 });
 
@@ -167,6 +168,7 @@ export default function ChatPart({ youtubeId }: ChatPartProps) {
 
     // Отправка сообщений в AI чат
     const handleSendMessage = async () => {
+         const token = localStorage.getItem("token");
         const text = editorRef.current?.innerText.trim();
         if (!text || isLoading) return;
 
@@ -177,7 +179,10 @@ export default function ChatPart({ youtubeId }: ChatPartProps) {
         try {
             const response = await fetch(`/api/v1/ai/ask?prompt=${encodeURIComponent(text)}&videoId=${currentYoutubeId}`, {
                 method: "GET",
-                headers: getAuthHeaders()
+                headers: {
+                     "Authorization": `Bearer ${token}`
+                    }
+
             });
             if (response.ok) {
                 const aiResponse = await response.text();

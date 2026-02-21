@@ -18,6 +18,7 @@ public class AiController {
             @RequestParam String prompt,
             @RequestParam String videoId,
             @AuthenticationPrincipal User user) {
+        System.out.println(user);
         // Здесь можно через jwtService вытащить именно ID, а не слать весь токен в ключ
         return aiService.processAsk(user.getId(), videoId, prompt);
     }
