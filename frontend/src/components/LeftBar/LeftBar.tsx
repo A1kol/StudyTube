@@ -16,6 +16,7 @@ export default function LeftBar({ isOpen, recentItemsFromBackend = [], onVideoSe
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [userName, setUserName] = useState<string>("Loading...");
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -119,7 +120,7 @@ export default function LeftBar({ isOpen, recentItemsFromBackend = [], onVideoSe
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={classes.icon}>
                       <path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/>
                     </svg>
-                    <span className={classes.truncate}>Алихан's Space</span>
+                    <span className={classes.truncate}>{userName}'s Space</span>
                   </div>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={classes.moreIcon}>
                     <circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/>
@@ -232,7 +233,7 @@ export default function LeftBar({ isOpen, recentItemsFromBackend = [], onVideoSe
                 <img draggable="false" src="https://lh3.googleusercontent.com/a/ACg8ocKMeWGFRPZyCAByPwWqRT1jL9b0ftQZ4LFguAxumFsbpYSrxAsm=s96-c" alt="Avatar" />
               </span>
               <div className={classes.nameWrapper}>
-                <p className={classes.userName}>Алихан Искендербеков</p>
+                <p className={classes.userName}>{userName}</p>
               </div>
             </div>
             <svg

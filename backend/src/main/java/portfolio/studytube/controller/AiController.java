@@ -1,10 +1,12 @@
 package portfolio.studytube.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import portfolio.studytube.entity.User;
 import portfolio.studytube.service.AiService;
+import reactor.core.publisher.Flux;
 
 @RestController
 @RequestMapping("/api/v1/ai")
@@ -23,8 +25,9 @@ public class AiController {
         return aiService.processAsk(user.getId(), videoId, prompt);
     }
 
-    @PostMapping("/summary") // Поменял на POST для больших текстов
-    public String getSummary(@RequestBody String transcript) {
-        return aiService.generateSummary(transcript);
+    @PostMapping(value = "/summary", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public Flux<String> getSummary(@RequestBody String transcript) {
+        // Теперь возвращаем поток данных
+        return aiService.generateSummaryStream(transcript);
     }
 }

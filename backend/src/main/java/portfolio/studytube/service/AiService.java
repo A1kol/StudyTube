@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import jakarta.annotation.PostConstruct;
 import portfolio.studytube.entity.Transcript;
 import portfolio.studytube.repository.*;
+import reactor.core.publisher.Flux;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -75,12 +76,19 @@ public class AiService {
         return aiResponse;
     }
 
-    public String generateSummary(String transcript) {
+    public Flux<String> generateSummaryStream(String transcript) {
+        // Ограничиваем входной текст для безопасности, если он гигантский
+        String safeTranscript = transcript.length() > 30000
+                ? transcript.substring(0, 30000)
+                : transcript;
+
+        System.out.println("DEBUG: AI начал обработку текста длиной: " + safeTranscript.length());
+
         return chatClient.prompt()
                 .system("Ты — профессиональный ассистент по обучению. " +
-                        "Составь содержательный конспект с буллитами и выделением терминов.")
-                .user("Сделай конспект: " + transcript)
-                .call()
+                        "Составь содержательный конспект с буллитами и выделением терминов на языке оригинала.")
+                .user("Сделай конспект этого текста: " + safeTranscript)
+                .stream() // Магия здесь: переключаемся в режим потока
                 .content();
     }
 }
