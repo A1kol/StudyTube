@@ -27,13 +27,41 @@ export default function Main() {
         return null; // или <div className={classes.loader}>Loading...</div>
     }
 
+    const [currentVideo, setCurrentVideo] = useState({
+        title: "Introduction to StudyAI",
+        youtubeId: "T7ZKNoB98ok"
+    });
+
+    const handleVideoChange = (data: any) => {
+        console.log("Main: Данные получены", data);
+        if (!data) return;
+
+        const videoInfo = data.video ? data.video : data;
+
+        setCurrentVideo({
+            title: videoInfo.title || "Untitled Video",
+            youtubeId: videoInfo.youtubeId || ""
+        });
+    };
+
     return (
         <div className={classes.wrapper}>
-            <LeftBar isOpen={isOpen} />
+            <LeftBar
+                isOpen={isOpen}
+                onVideoSelect={handleVideoChange}
+            />
 
             <div className={`${classes.content} ${isOpen ? classes.shifted : ""}`}>
-                <Header isOpen={isOpen} toggle={() => setIsOpen(p => !p)} />
-                <ChatPart></ChatPart>
+                <Header
+                    isOpen={isOpen}
+                    toggle={() => setIsOpen(p => !p)}
+                    videoTitle={currentVideo.title}
+                />
+
+                <ChatPart
+                    key={currentVideo.youtubeId}
+                    youtubeId={currentVideo.youtubeId}
+                />
             </div>
         </div>
     );

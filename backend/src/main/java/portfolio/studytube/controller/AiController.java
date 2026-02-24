@@ -1,8 +1,12 @@
 package portfolio.studytube.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import portfolio.studytube.entity.User;
 import portfolio.studytube.service.AiService;
+import reactor.core.publisher.Flux;
 
 @RestController
 @RequestMapping("/api/v1/ai")
@@ -15,15 +19,15 @@ public class AiController {
     public String askAi(
             @RequestParam String prompt,
             @RequestParam String videoId,
-            @RequestHeader("Authorization") String authHeader
-    ) {
+            @AuthenticationPrincipal User user) {
+        System.out.println(user);
         // Здесь можно через jwtService вытащить именно ID, а не слать весь токен в ключ
-        String userId = authHeader.substring(7);
-        return aiService.processAsk(userId, videoId, prompt);
+        return aiService.processAsk(user.getId(), videoId, prompt);
     }
 
-    @PostMapping("/summary") // Поменял на POST для больших текстов
-    public String getSummary(@RequestBody String transcript) {
-        return aiService.generateSummary(transcript);
+    @PostMapping(value = "/summary", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public Flux<String> getSummary(@RequestBody String transcript) {
+        // Теперь возвращаем поток данных
+        return aiService.generateSummaryStream(transcript);
     }
 }

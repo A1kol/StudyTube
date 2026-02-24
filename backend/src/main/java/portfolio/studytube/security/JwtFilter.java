@@ -9,6 +9,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import portfolio.studytube.entity.User;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -44,18 +45,23 @@ public class JwtFilter extends OncePerRequestFilter {
 
         try {
             String username = jwtService.extractUsername(token);
+            String usermail = jwtService.extractEmail(token);
 
             // 5. Если имя есть и в текущем потоке (SecurityContext) пусто
             if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                // В JwtFilter.java
                 if (jwtService.isTokenValid(token)) {
-                    // Создаем объект аутентификации
-                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                            username,
-                            null,
-                            Collections.emptyList()
-                    );
+                    String name = jwtService.extractUsername(token); // Берем name
+                    String email = jwtService.extractEmail(token);   // Берем email
 
-                    // Кладем в контекст — теперь Spring знает, что юзер "свой"
+                    User userPrincipal = new User();
+                    userPrincipal.setName(name);
+                    userPrincipal.setMail(email);
+                    // Теперь у объекта заполнены оба поля!
+
+                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                            userPrincipal, null, Collections.emptyList()
+                    );
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                 }
             }

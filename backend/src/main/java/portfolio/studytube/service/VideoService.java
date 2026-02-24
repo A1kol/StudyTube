@@ -5,10 +5,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
-import portfolio.studytube.entity.User;
+import org.springframework.web.client.RestTemplate;
 import portfolio.studytube.entity.Video;
 import portfolio.studytube.repository.VideoRepository;
 
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -17,51 +18,76 @@ import java.util.regex.Pattern;
 public class VideoService {
     private final VideoRepository videoRepository;
     private final TranscriptService transcriptService;
+    private final RestTemplate restTemplate;
 
+    /**
+     * Основной метод для получения или создания видео.
+     * Сразу тянет название и превью, чтобы не было заглушек в БД.
+     */
     @Transactional
-    public Video processNewVideo(String url, User user) {
-        String yId = extractYoutubeId(url);
-
-        return videoRepository.findByYoutubeId(yId)
+    public Video getOrCreateVideo(String youtubeId) {
+        return videoRepository.findByYoutubeId(youtubeId)
                 .orElseGet(() -> {
-                    // 1. Создаем объект видео
+                    // 1. Сразу тянем реальную инфу из YouTube oEmbed
+                    Map<String, String> metadata = fetchYouTubeMetadata(youtubeId);
+
                     Video newVideo = Video.builder()
-                            .youtubeId(yId)
-                            .title("Загрузка текста...")
-                            .addedBy(user)
+                            .youtubeId(youtubeId)
+                            .title(metadata.getOrDefault("title", "YouTube Video"))
+                            .thumbnailUrl(metadata.getOrDefault("thumbnail", ""))
                             .build();
 
-                    // 2. Сохраняем в БД (но транзакция еще не закомичена!)
+                    // 2. Сохраняем видео с готовыми данными
                     Video savedVideo = videoRepository.save(newVideo);
 
-                    // 3. Регистрируем действие ПОСЛЕ коммита транзакции
+                    // 3. Запускаем получение транскрипта строго после коммита основной транзакции
                     if (TransactionSynchronizationManager.isActualTransactionActive()) {
                         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
                             @Override
                             public void afterCommit() {
-                                // Этот код выполнится только когда видео физически будет в БД
-                                transcriptService.fetchAndSaveTranscript(savedVideo, yId);
+                                transcriptService.fetchAndSaveTranscript(savedVideo, youtubeId);
                             }
                         });
-                    } else {
-                        // Если вдруг транзакции нет (на всякий случай), запускаем сразу
-                        transcriptService.fetchAndSaveTranscript(savedVideo, yId);
                     }
-
                     return savedVideo;
                 });
     }
 
-    private String extractYoutubeId(String url) {
+    /**
+     * Получение метаданных (Title, Thumbnail) через YouTube oEmbed API.
+     */
+    private Map<String, String> fetchYouTubeMetadata(String youtubeId) {
+        try {
+            String url = "https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=" + youtubeId + "&format=json";
+            Map<String, Object> response = restTemplate.getForObject(url, Map.class);
+
+            if (response != null) {
+                return Map.of(
+                        "title", (String) response.getOrDefault("title", "YouTube Video"),
+                        "thumbnail", (String) response.getOrDefault("thumbnail_url", "")
+                );
+            }
+        } catch (Exception e) {
+            System.err.println("Ошибка oEmbed для ID " + youtubeId + ": " + e.getMessage());
+        }
+        return Map.of("title", "YouTube Video", "thumbnail", "");
+    }
+
+    /**
+     * Универсальный экстрактор ID из любых ссылок YouTube.
+     */
+    public String extractYoutubeId(String url) {
+        if (url == null) return null;
+        if (url.length() == 11) return url; // Уже ID
+
         String regex = "(?<=watch\\?v=|/videos/|embed/|youtu.be/|/v/|/e/|watch\\?v%3D|watch\\?feature=player_embedded&v=|%2Fvideos%2F|embed%2F|youtu.be%2F|%2Fv%2F)[^#&?\\n]+";
         Pattern pattern = Pattern.compile(regex);
         Matcher matcher = pattern.matcher(url);
 
         if (matcher.find()) {
             return matcher.group();
-        } else {
-            if (url != null && url.length() == 11) return url;
-            throw new IllegalArgumentException("Некорректная ссылка YouTube!");
         }
+
+        throw new IllegalArgumentException("Некорректная ссылка YouTube!");
     }
 }
