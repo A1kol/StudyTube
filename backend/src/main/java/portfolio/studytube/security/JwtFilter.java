@@ -1,77 +1,75 @@
 package portfolio.studytube.security;
 
+import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-import portfolio.studytube.entity.User;
+import org.springframework.web.servlet.HandlerExceptionResolver;
+import portfolio.studytube.exception.InvalidTokenException;
+import portfolio.studytube.user.entity.User;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.Date;
 
 @Component
 @RequiredArgsConstructor
 public class JwtFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
+    private final HandlerExceptionResolver handlerExceptionResolver;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain) throws ServletException, IOException {
-
-        // 1. ВАЖНО ДЛЯ CORS: Пропускаем OPTIONS запросы без проверки JWT
-        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
-            response.setStatus(HttpServletResponse.SC_OK);
-            return;
-        }
-
-        // 2. Достаем заголовок
-        String authHeader = request.getHeader("Authorization");
-
-        // 3. Если заголовка нет или он не Bearer — идем дальше по цепочке
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-
-        // 4. Вырезаем токен
-        String token = authHeader.substring(7);
-
+                                    @NonNull HttpServletResponse response,
+                                    @NonNull FilterChain filterChain) throws ServletException, IOException {
         try {
-            String username = jwtService.extractUsername(token);
-            String usermail = jwtService.extractEmail(token);
+            if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+                response.setStatus(HttpServletResponse.SC_OK);
+                return;
+            }
 
-            // 5. Если имя есть и в текущем потоке (SecurityContext) пусто
-            if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                // В JwtFilter.java
-                if (jwtService.isTokenValid(token)) {
-                    String name = jwtService.extractUsername(token); // Берем name
-                    String email = jwtService.extractEmail(token);   // Берем email
+            String authHeader = request.getHeader("Authorization");
 
-                    User userPrincipal = new User();
-                    userPrincipal.setName(name);
-                    userPrincipal.setMail(email);
-                    // Теперь у объекта заполнены оба поля!
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                filterChain.doFilter(request, response);
+                return;
+            }
+
+            String token = authHeader.substring(7);
+
+            Claims claims = jwtService.extractAllClaims(token);
+            String userMail = claims.get("mail", String.class);
+
+            if (userMail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                if (claims.getExpiration().after(new Date())) {
+                    String userName = claims.getSubject();
+                    Long userId = claims.get("id", Long.class);
+
+                    User userPrincipal = User.builder()
+                            .name(userName)
+                            .id(userId)
+                            .mail(userMail)
+                            .build();
 
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                             userPrincipal, null, Collections.emptyList()
                     );
                     SecurityContextHolder.getContext().setAuthentication(authToken);
-                }
+                } else throw new InvalidTokenException("TOKEN_EXPIRED");
             }
-        } catch (Exception e) {
-            // Если токен кривой или просрочен — просто логируем или идем дальше.
-            // Spring Security сам вернет 403, так как контекст останется пустым.
-            System.err.println("JWT Error: " + e.getMessage());
-        }
 
-        // 6. Обязательно передаем управление следующему фильтру
-        filterChain.doFilter(request, response);
+
+            filterChain.doFilter(request, response);
+        } catch (RuntimeException e) {
+            handlerExceptionResolver.resolveException(request, response, null, e);
+        }
     }
 }

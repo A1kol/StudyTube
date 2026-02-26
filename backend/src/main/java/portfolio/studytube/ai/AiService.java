@@ -1,4 +1,4 @@
-package portfolio.studytube.service;
+package portfolio.studytube.ai;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.chat.client.ChatClient;
@@ -7,8 +7,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import jakarta.annotation.PostConstruct;
-import portfolio.studytube.entity.Transcript;
-import portfolio.studytube.repository.*;
+import portfolio.studytube.transcript.Transcript;
+import portfolio.studytube.service.TranscriptService;
+import portfolio.studytube.transcript.TranscriptRepository;
+import portfolio.studytube.video.VideoRepository;
 import reactor.core.publisher.Flux;
 
 import java.util.List;

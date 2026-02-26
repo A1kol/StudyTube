@@ -2,6 +2,7 @@ package portfolio.studytube.security;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.*;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -19,10 +20,13 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .cors(Customizer.withDefaults()) // Добавляем только это, чтобы включить CORS
+                .cors(Customizer.withDefaults())
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers( HttpMethod.DELETE).authenticated()
+
+                        .requestMatchers("/api/auth/register", "/api/auth/login").permitAll()
+
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);

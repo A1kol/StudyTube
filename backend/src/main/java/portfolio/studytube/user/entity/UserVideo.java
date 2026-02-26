@@ -1,8 +1,9 @@
-package portfolio.studytube.entity;
+package portfolio.studytube.user.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import portfolio.studytube.video.Video;
 
 import java.time.LocalDateTime;
 

@@ -1,20 +1,22 @@
-package portfolio.studytube.entity;
+package portfolio.studytube.user.entity;
 
 
 import jakarta.persistence.*;
 import lombok.*;
 
-@Entity(name = "users")
+@Entity
+@Table(name = "users")
 @NoArgsConstructor
 @AllArgsConstructor
 @Setter
 @Getter
+@Builder
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true, nullable = false)
+    @Column(nullable = false)
     private String name;
 
     @Column(unique = true, nullable = false)

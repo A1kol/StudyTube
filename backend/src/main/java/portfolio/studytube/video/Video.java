@@ -1,10 +1,7 @@
-package portfolio.studytube.entity;
+package portfolio.studytube.video;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
-
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "videos")

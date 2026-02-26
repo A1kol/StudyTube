@@ -1,4 +1,4 @@
-package portfolio.studytube.dto;
+package portfolio.studytube.transcript;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 

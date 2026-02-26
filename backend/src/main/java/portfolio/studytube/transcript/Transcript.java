@@ -1,9 +1,10 @@
-package portfolio.studytube.entity;
+package portfolio.studytube.transcript;
 
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
+import portfolio.studytube.video.Video;
 
 @Entity
 @Table(name = "transcripts")
