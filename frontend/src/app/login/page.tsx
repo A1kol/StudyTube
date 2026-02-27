@@ -29,7 +29,7 @@ export default function LogIn() {
         : `${API_URL}/register`;
 
       const body = isLogin
-        ? { name, password }
+        ? { mail: email, password }
         : { name, password, mail: email };
 
       const res = await fetch(url, {
@@ -38,19 +38,19 @@ export default function LogIn() {
         body: JSON.stringify(body),
       });
 
+      const data = await res.json();
+
       if (!res.ok) {
-        const data = await res.json(); // парсим JSON ответа
-        throw new Error(data.error || "Auth error");
+        throw new Error(data.error || "Authentication failed");
       }
 
-
       if (isLogin) {
-        const data = await res.json(); // AuthResponseDTO
         localStorage.setItem("token", data.token);
         localStorage.setItem("username", data.name);
         router.push("/");
       } else {
         setIsLogin(true);
+        setError(null);
       }
     } catch (err: any) {
       setError(err.message || "Something went wrong");
@@ -81,7 +81,10 @@ export default function LogIn() {
             className={`${classes.toggleBtn} ${
               isLogin ? classes.activeTab : ""
             }`}
-            onClick={() => setIsLogin(true)}
+            onClick={() => {
+                setIsLogin(true);
+                setError(null);
+            }}
             type="button"
           >
             Log in
@@ -90,7 +93,10 @@ export default function LogIn() {
             className={`${classes.toggleBtn} ${
               !isLogin ? classes.activeTab : ""
             }`}
-            onClick={() => setIsLogin(false)}
+            onClick={() => {
+                setIsLogin(false);
+                setError(null);
+            }}
             type="button"
           >
             Sign up
@@ -111,35 +117,35 @@ export default function LogIn() {
                 <h1>{isLogin ? "Welcome back" : "Start study"}</h1>
                 <p>
                   {isLogin
-                    ? "Продолжайте ваш путь к знаниям"
-                    : "Создайте аккаунт, чтобы получить доступ к курсам"}
+                    ? "Введите вашу почту для входа в систему"
+                    : "Создайте аккаунт, чтобы начать обучение"}
                 </p>
               </div>
 
               <form className={classes.form} onSubmit={handleSubmit}>
-                <div className={classes.inputGroup}>
-                  <label>Username</label>
-                  <input
-                    type="text"
-                    placeholder="alex"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                  />
-                </div>
-
                 {!isLogin && (
                   <div className={classes.inputGroup}>
-                    <label>Mail</label>
+                    <label>Username</label>
                     <input
-                      type="email"
-                      placeholder="example@edu.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      type="text"
+                      placeholder="alex_gold"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
                       required
                     />
                   </div>
                 )}
+
+                <div className={classes.inputGroup}>
+                  <label>Mail</label>
+                  <input
+                    type="email"
+                    placeholder="example@study.tube"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                </div>
 
                 <div className={classes.inputGroup}>
                   <label>Password</label>
@@ -153,7 +159,7 @@ export default function LogIn() {
                 </div>
 
                 {error && (
-                  <p style={{ color: "#ff6b6b", fontSize: 14 }}>{error}</p>
+                  <p className={classes.errorText}>{error}</p>
                 )}
 
                 <button
@@ -162,9 +168,9 @@ export default function LogIn() {
                   disabled={loading}
                 >
                   {loading
-                    ? "Загрузка..."
+                    ? "Processing..."
                     : isLogin
-                    ? "Войти в систему"
+                    ? "Войти в аккаунт"
                     : "Зарегистрироваться"}
                 </button>
               </form>
@@ -177,7 +183,7 @@ export default function LogIn() {
         </div>
 
         <button className={classes.googleBtn} type="button">
-          Log in with Google
+          Continue with Google
         </button>
       </motion.div>
     </div>

@@ -9,7 +9,7 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
-import portfolio.studytube.service.TranscriptService;
+import portfolio.studytube.transcript.TranscriptService;
 import portfolio.studytube.user.entity.User;
 import portfolio.studytube.user.entity.UserVideo;
 

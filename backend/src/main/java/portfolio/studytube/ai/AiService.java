@@ -8,7 +8,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import jakarta.annotation.PostConstruct;
 import portfolio.studytube.transcript.Transcript;
-import portfolio.studytube.service.TranscriptService;
+import portfolio.studytube.transcript.TranscriptService;
 import portfolio.studytube.transcript.TranscriptRepository;
 import portfolio.studytube.video.VideoRepository;
 import reactor.core.publisher.Flux;

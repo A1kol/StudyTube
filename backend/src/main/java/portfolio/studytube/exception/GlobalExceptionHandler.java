@@ -6,16 +6,21 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-    //User exceptions handling
+   //Validation exception
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidationException(MethodArgumentNotValidException ex) {
-        return createResponse("INVALID_FIELDS_LENGTH", HttpStatus.BAD_REQUEST);
+        String details = ex.getBindingResult().getFieldErrors().stream()
+                .map(error -> error.getField() + ": " + error.getDefaultMessage())
+                .collect(Collectors.joining(", "));
+
+        return createResponse("VALIDATION_FAILED [" + details + "]", HttpStatus.BAD_REQUEST);
     }
 
-
+    //User exceptions handling
     @ExceptionHandler(com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException.class)
     public ResponseEntity<Map<String, Object>> handleUnknownProperty(com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException ex) {
         return createResponse("UNKNOWN_FIELD_PRESENTED: " + ex.getPropertyName(), HttpStatus.BAD_REQUEST);
