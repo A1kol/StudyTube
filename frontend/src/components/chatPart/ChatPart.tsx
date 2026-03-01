@@ -35,7 +35,6 @@ export default function ChatPart({ youtubeId }: ChatPartProps) {
         };
     };
 
-    // --- ЛОГИКА СИНХРОНИЗАЦИИ И ЗАГРУЗКИ ---
     useEffect(() => {
         const syncVideoWithDb = async () => {
             try {
@@ -149,27 +148,66 @@ export default function ChatPart({ youtubeId }: ChatPartProps) {
         } catch (error) { console.error(error); } finally { setIsLoading(false); }
     };
 
-    const handleGetSummary = async () => {
-        if (summaryText && !isLoading) { setActiveN("summary"); return; }
-        const textToSummarize = (transcriptData?.content || "").slice(0, 7000);
-        setIsLoading(true);
+
+const handleGetSummary = async () => {
+    if ((summaryText && !isLoading) || !currentYoutubeId) {
         setActiveN("summary");
-        setSummaryText("");
-        try {
-            const response = await fetch(`/api/v1/ai/summary`, {
-                method: "POST", headers: getAuthHeaders(), body: textToSummarize
+        return;
+    }
+
+    setIsLoading(true);
+    setActiveN("summary");
+    setSummaryText("");
+
+    try {
+        const response = await fetch(`/api/v1/ai/summary?videoId=${currentYoutubeId}`, {
+            method: "POST",
+            headers: getAuthHeaders(),
+        });
+
+        if (response.status === 403) {
+            localStorage.removeItem("token");
+            window.location.href = "/login";
+            return;
+        }
+
+        if (!response.ok) {
+            throw new Error(`Server error: ${response.status}`);
+        }
+
+        if (!response.body) return;
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            const chunk = decoder.decode(value, { stream: true });
+
+            // Оптимизированный парсинг SSE
+            const lines = chunk.split("\n");
+            lines.forEach(line => {
+                if (line.startsWith("data:")) {
+                    const content = line.replace("data:", "");
+                    // Игнорируем техническое сообщение [DONE] если оно есть
+                    if (content.trim() !== "[DONE]") {
+                        setSummaryText(prev => prev + content);
+                    }
+                } else if (line.trim() && !line.startsWith("data:")) {
+                    // Fallback для чистого текста
+                    setSummaryText(prev => prev + line);
+                }
             });
-            if (!response.body) return;
-            const reader = response.body.getReader();
-            const decoder = new TextDecoder();
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-                const chunk = decoder.decode(value);
-                setSummaryText(prev => prev + chunk.replace(/data:/g, ''));
-            }
-        } catch (error) { console.error(error); } finally { setIsLoading(false); }
-    };
+        }
+    } catch (error) {
+        console.error("Summary fetch error:", error);
+        setSummaryText(prev => prev.length > 0 ? prev : "Ошибка при генерации конспекта.");
+    } finally {
+        setIsLoading(false);
+    }
+};
 
     useEffect(() => {
         if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -200,7 +238,7 @@ export default function ChatPart({ youtubeId }: ChatPartProps) {
                         </div>
                         <div className={classes.aboutNavR}>
                             <div className={classes.autoScrollButton} onClick={handleToggleScroll} style={{ cursor: 'pointer' }}>
-                                <div className={classes.arrows} />{isScrollDirectionDown ? "Down" : "Up"}
+                                <div className={classes.arrows} />{isScrollDirectionDown ? "Scroll Down" : "Scroll Up"}
                             </div>
                         </div>
                     </div>

@@ -6,6 +6,7 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 import portfolio.studytube.video.Video;
 
+
 @Entity
 @Table(name = "transcripts")
 @Getter @Setter
@@ -27,4 +28,8 @@ public class Transcript {
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
     private String chunks;
+
+    // Наш новый кэш для ИИ
+    @Column(columnDefinition = "TEXT")
+    private String summary;
 }

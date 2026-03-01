@@ -5,11 +5,14 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import jakarta.annotation.PostConstruct;
+import portfolio.studytube.exception.ServiceException;
 import portfolio.studytube.transcript.Transcript;
 import portfolio.studytube.transcript.TranscriptService;
 import portfolio.studytube.transcript.TranscriptRepository;
+import portfolio.studytube.video.Video;
 import portfolio.studytube.video.VideoRepository;
 import reactor.core.publisher.Flux;
 
@@ -19,12 +22,11 @@ import java.util.concurrent.TimeUnit;
 @Service
 @RequiredArgsConstructor
 public class AiService {
-
     private final ChatModel chatModel;
     private final StringRedisTemplate redisTemplate;
     private final TranscriptRepository transcriptRepository;
     private final VideoRepository videoRepository;
-    private final TranscriptService transcriptService; // Для получения текста "на лету", если в БД пусто
+    private final TranscriptService transcriptService;
     private ChatClient chatClient;
 
     @Value("${app.ai.chat.history-limit}")
@@ -41,26 +43,22 @@ public class AiService {
     public String processAsk(Long userId, String youtubeId, String prompt) {
         String redisKey = "chat_history:" + userId + ":" + youtubeId;
 
-        // 1. Пытаемся получить текст видео из БД, либо через скрипт (fallback)
         String videoContent = videoRepository.findByYoutubeId(youtubeId)
                 .flatMap(transcriptRepository::findByVideo)
                 .map(Transcript::getContent)
                 .orElseGet(() -> {
                     try {
-                        // Если в БД нет, используем твой метод для получения сырого текста
                         return transcriptService.getRawTranscriptWithTimestamps(youtubeId);
                     } catch (Exception e) {
                         return "Текст видео недоступен для анализа.";
                     }
                 });
 
-        // 2. Получаем историю чата из Redis
         List<String> history = redisTemplate.opsForList().range(redisKey, -historyLimit, -1);
         String historyContext = (history != null && !history.isEmpty())
                 ? String.join("\n", history)
                 : "Это начало обсуждения.";
 
-        // 3. Формируем запрос: System Prompt (База) + User Prompt (Вопрос + История)
         String aiResponse = chatClient.prompt()
                 .system(sp -> sp.text("Ты экспертный ассистент по обучению. " +
                         "Твоя задача — отвечать на вопросы, основываясь исключительно на предоставленном тексте видео. " +
@@ -70,7 +68,6 @@ public class AiService {
                 .call()
                 .content();
 
-        // 4. Сохраняем в Redis и обновляем TTL
         redisTemplate.opsForList().rightPush(redisKey, "U: " + prompt);
         redisTemplate.opsForList().rightPush(redisKey, "AI: " + aiResponse);
         redisTemplate.expire(redisKey, ttlHours, TimeUnit.HOURS);
@@ -78,19 +75,42 @@ public class AiService {
         return aiResponse;
     }
 
-    public Flux<String> generateSummaryStream(String transcript) {
-        // Ограничиваем входной текст для безопасности, если он гигантский
-        String safeTranscript = transcript.length() > 30000
-                ? transcript.substring(0, 30000)
-                : transcript;
+    public Flux<String> generateSummaryStream(String youtubeId) {
+        return Flux.defer(() -> {
+                    // 1. Ищем видео
+                    Video video = videoRepository.findByYoutubeId(youtubeId)
+                            .orElseThrow(() -> new ServiceException("VIDEO_NOT_FOUND", HttpStatus.NOT_FOUND));
 
-        System.out.println("DEBUG: AI начал обработку текста длиной: " + safeTranscript.length());
+                    // 2. Ищем транскрипт
+                    Transcript transcript = transcriptRepository.findByVideo(video)
+                            .orElseThrow(() -> new ServiceException("TRANSCRIPT_NOT_READY", HttpStatus.ACCEPTED));
 
-        return chatClient.prompt()
-                .system("Ты — профессиональный ассистент по обучению. " +
-                        "Составь содержательный конспект с буллитами и выделением терминов на языке оригинала.")
-                .user("Сделай конспект этого текста: " + safeTranscript)
-                .stream() // Магия здесь: переключаемся в режим потока
-                .content();
+                    // 3. Если конспект уже есть — отдаем его сразу
+                    if (transcript.getSummary() != null && !transcript.getSummary().isBlank()) {
+                        return Flux.just(transcript.getSummary());
+                    }
+
+                    // 4. Генерация через ИИ
+                    StringBuilder fullSummary = new StringBuilder();
+
+                    return chatClient.prompt()
+                            .system("Ты — ассистент StudyTube. Сделай краткий конспект.")
+                            .user("Текст видео: " + transcript.getContent())
+                            .stream()
+                            .content()
+                            .doOnNext(fullSummary::append)
+                            .doOnComplete(() -> {
+                                // 5. Важный момент: сохраняем через репозиторий прямо тут
+                                // Используем текущий объект transcript из замыкания
+                                transcript.setSummary(fullSummary.toString());
+                                transcriptRepository.save(transcript);
+                                System.out.println("✅ Summary saved for: " + youtubeId);
+                            });
+                })
+                // Если произошла ошибка внутри потока, она пробросится в GlobalHandler правильно
+                .onErrorResume(e -> {
+                    System.err.println("❌ AI Summary Error: " + e.getMessage());
+                    return Flux.error(e);
+                });
     }
 }
