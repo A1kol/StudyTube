@@ -19,8 +19,5 @@ public class Video {
 
     private String title;
 
-    @Column(columnDefinition = "TEXT")
-    private String description;
-
     private String thumbnailUrl;
 }

@@ -1,20 +1,19 @@
 package portfolio.studytube.transcript;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import portfolio.studytube.video.Video;
-import portfolio.studytube.video.VideoRepository;
-
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
+import portfolio.studytube.exception.ServiceException;
+import portfolio.studytube.video.*;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 
 @Service
 @RequiredArgsConstructor
+
 public class TranscriptService {
     private final TranscriptRepository transcriptRepository;
     private final VideoRepository videoRepository;
@@ -25,7 +24,7 @@ public class TranscriptService {
     public void fetchAndSaveTranscript(Video video, String youtubeId) {
         try {
             Video managedVideo = videoRepository.findById(video.getId())
-                    .orElseThrow(() -> new RuntimeException("Видео не найдено"));
+                    .orElseThrow(() -> new ServiceException("TRANSCRIPT_NOT_FOUND", HttpStatus.NOT_FOUND));
 
             String jsonOutput = runPythonScript(youtubeId, "json");
 
@@ -99,7 +98,6 @@ public class TranscriptService {
             JsonNode root = objectMapper.readTree(json);
             StringBuilder sb = new StringBuilder();
 
-            // Если пришел массив массивов [[{...}]], берем первый элемент
             if (root.isArray() && root.has(0) && root.get(0).isArray()) {
                 root = root.get(0);
             }

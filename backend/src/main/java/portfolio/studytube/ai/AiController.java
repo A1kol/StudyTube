@@ -20,13 +20,14 @@ public class AiController {
             @RequestParam String videoId,
             @AuthenticationPrincipal User user) {
         System.out.println(user);
-        // Здесь можно через jwtService вытащить именно ID, а не слать весь токен в ключ
         return aiService.processAsk(user.getId(), videoId, prompt);
     }
 
     @PostMapping(value = "/summary", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public Flux<String> getSummary(@RequestBody String transcript) {
-        // Теперь возвращаем поток данных
-        return aiService.generateSummaryStream(transcript);
+    public Flux<String> getSummary(
+            @RequestParam String videoId,
+            @AuthenticationPrincipal User user) {
+
+        return aiService.generateSummaryStream(videoId);
     }
 }

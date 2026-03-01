@@ -27,7 +27,6 @@ app:
   jwt:
     secret: ${JWT_SECRET:osjdnccjsab21382198ehsacbsi17^%^&%csdjvbsabcvisa}
     expiration: 86400000
-  # НОВЫЙ БЛОК НАСТРОЕК
   ai:
     chat:
       history-limit: 10

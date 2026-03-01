@@ -11,7 +11,6 @@ public class TranscriptController {
 
     private final TranscriptRepository transcriptRepository;
 
-    // Эндпоинт 1: Только текст (chunks будет отсутствовать в JSON благодаря @JsonInclude)
     @GetMapping("/{videoId}")
     public ResponseEntity<TranscriptResponseDTO> getTranscript(@PathVariable Long videoId) {
         return transcriptRepository.findById(videoId)
@@ -22,7 +21,6 @@ public class TranscriptController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // Эндпоинт 2: Полные данные (и текст, и таймкоды)
     @GetMapping("/{videoId}/full")
     public ResponseEntity<TranscriptResponseDTO> getFullTranscript(@PathVariable Long videoId) {
         return transcriptRepository.findById(videoId)
