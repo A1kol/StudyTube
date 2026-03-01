@@ -5,6 +5,9 @@ spring:
     url: jdbc:postgresql://localhost:5432/studytube
     username: user
     password: password
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: true
   jpa:
     hibernate:
       ddl-auto: update
@@ -22,7 +25,7 @@ spring:
 
 app:
   jwt:
-    secret: ${JWT_SECRET:your_very_long_random_string_with_at_least_32_characters_for_safety}
+    secret: ${JWT_SECRET:osjdnccjsab21382198ehsacbsi17^%^&%csdjvbsabcvisa}
     expiration: 86400000
   # НОВЫЙ БЛОК НАСТРОЕК
   ai:

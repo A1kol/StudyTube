@@ -1,11 +1,10 @@
-package portfolio.studytube.controller;
+package portfolio.studytube.ai;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import portfolio.studytube.entity.User;
-import portfolio.studytube.service.AiService;
+import portfolio.studytube.user.entity.User;
 import reactor.core.publisher.Flux;
 
 @RestController

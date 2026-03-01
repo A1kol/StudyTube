@@ -1,4 +1,4 @@
-package portfolio.studytube.service;
+package portfolio.studytube.transcript;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -6,10 +6,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import portfolio.studytube.entity.Transcript;
-import portfolio.studytube.entity.Video;
-import portfolio.studytube.repository.TranscriptRepository;
-import portfolio.studytube.repository.VideoRepository;
+import portfolio.studytube.video.Video;
+import portfolio.studytube.video.VideoRepository;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;

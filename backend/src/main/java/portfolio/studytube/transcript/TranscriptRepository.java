@@ -1,8 +1,7 @@
-package portfolio.studytube.repository;
+package portfolio.studytube.transcript;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import portfolio.studytube.entity.Transcript;
-import portfolio.studytube.entity.Video;
+import portfolio.studytube.video.Video;
 
 import java.util.Optional;
 

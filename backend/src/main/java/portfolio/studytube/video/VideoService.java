@@ -1,13 +1,12 @@
-package portfolio.studytube.service;
+package portfolio.studytube.video;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import portfolio.studytube.entity.User;
-import portfolio.studytube.entity.UserVideo;
-import portfolio.studytube.entity.Video;
-import portfolio.studytube.repository.UserRepository;
-import portfolio.studytube.repository.UserVideoRepository;
+import portfolio.studytube.user.entity.User;
+import portfolio.studytube.user.entity.UserVideo;
+import portfolio.studytube.user.repository.UserRepository;
+import portfolio.studytube.user.repository.UserVideoRepository;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -15,10 +14,10 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
-public class VideoLibraryService {
+public class VideoService {
 
     private final UserVideoRepository userVideoRepository;
-    private final VideoService videoService;
+    private final VideoController.VideoService videoService;
     private final UserRepository userRepository;// Добавляем сервис для работы с метаданными
 
     @Transactional

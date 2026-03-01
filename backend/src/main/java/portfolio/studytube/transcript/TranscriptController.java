@@ -1,10 +1,8 @@
-package portfolio.studytube.controller;
+package portfolio.studytube.transcript;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import portfolio.studytube.dto.TranscriptResponseDTO;
-import portfolio.studytube.repository.TranscriptRepository;
 
 @RestController
 @RequestMapping("/api/transcripts")
