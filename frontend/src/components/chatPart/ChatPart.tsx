@@ -9,7 +9,7 @@ interface ChatPartProps {
 
 export default function ChatPart({ youtubeId }: ChatPartProps) {
     const [activeN, setActiveN] = useState<"chat" | "summary" | "notes">("chat");
-    const [category, setCategory] = useState("General");
+    const [category, setCategory] = useState("");
     const [summaryText, setSummaryText] = useState<string>("");
     const [notesText, setNotesText] = useState<string>("");
 
@@ -24,7 +24,7 @@ export default function ChatPart({ youtubeId }: ChatPartProps) {
     const scrollRef = useRef<HTMLDivElement>(null);
     const transcriptScrollRef = useRef<HTMLDivElement>(null);
 
-    const currentYoutubeId = youtubeId || "T7ZKNoB98ok";
+    const currentYoutubeId = youtubeId;
 
     const getAuthHeaders = (): Record<string, string> => {
         if (typeof window === 'undefined') return {};
