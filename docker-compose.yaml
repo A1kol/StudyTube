@@ -1,3 +1,5 @@
+version: '3.9'
+
 services:
   postgres:
     image: pgvector/pgvector:pg16
@@ -24,7 +26,7 @@ services:
     ports:
       - "6379:6379"
     healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
+      test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 3s
       retries: 5
@@ -52,15 +54,16 @@ services:
       redis:
         condition: service_healthy
     environment:
-      # Поменял 'db' на 'postgres', чтобы совпадало с именем сервиса выше
-      - JAVA_OPTS=-Xmx2g -Xms512m
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/studytube
-      - SPRING_DATASOURCE_USERNAME=user
-      - SPRING_DATASOURCE_PASSWORD=password
-      - SPRING_DATA_REDIS_HOST=redis
-      - SPRING_AI_OLLAMA_BASE_URL=http://host.docker.internal:11434
+      JAVA_OPTS: "-Xmx2g -Xms512m"
+      SPRING_DATASOURCE_URL: "jdbc:postgresql://postgres:5432/studytube"
+      SPRING_DATASOURCE_USERNAME: "user"
+      SPRING_DATASOURCE_PASSWORD: "password"
+      SPRING_DATA_REDIS_HOST: "redis"
+      SPRING_AI_OLLAMA_BASE_URL: "http://host.docker.internal:11434"
     networks:
       - studytube-network
+    ports:
+      - "8080:8080"
 
   nginx:
     image: nginx:latest

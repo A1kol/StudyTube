@@ -26,4 +26,5 @@ RUN pip3 install --no-cache-dir youtube-transcript-api --break-system-packages
 # 3. Копируем готовый JAR (этот слой меняется чаще всего)
 COPY --from=build /app/target/*.jar app.jar
 
+EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "/app.jar"]
