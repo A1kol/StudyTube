@@ -10,7 +10,7 @@ export default function LogIn() {
   const router = useRouter();
 
   const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+  const [mail, setMail] = useState(""); // Используем mail везде единообразно
   const [password, setPassword] = useState("");
 
   const [loading, setLoading] = useState(false);
@@ -24,13 +24,12 @@ export default function LogIn() {
     setLoading(true);
 
     try {
-      const url = isLogin
-        ? `${API_URL}/login`
-        : `${API_URL}/register`;
+      const url = isLogin ? `${API_URL}/login` : `${API_URL}/register`;
 
+      // Формируем тело запроса, используя ПРАВИЛЬНЫЕ имена стейтов
       const body = isLogin
-        ? { mail: email, password }
-        : { name, password, mail: email };
+        ? { mail, password }
+        : { name, password, mail };
 
       const res = await fetch(url, {
         method: "POST",
@@ -38,21 +37,42 @@ export default function LogIn() {
         body: JSON.stringify(body),
       });
 
-      const data = await res.json();
-
+      // 1. Проверка статуса
       if (!res.ok) {
-        throw new Error(data.error || "Authentication failed");
+        const errorText = await res.text();
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { error: "Authentication failed" };
+        }
+        throw new Error(errorData.error || errorData.message || "Error");
       }
 
+      // 2. Безопасный парсинг JSON
+      const contentType = res.headers.get("content-type");
+      const data = (contentType && contentType.includes("application/json"))
+        ? await res.json()
+        : null;
+
+      // 3. Логика обработки успеха
       if (isLogin) {
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("username", data.name);
-        router.push("/");
+        if (data && data.token) {
+          localStorage.setItem("token", data.token);
+          localStorage.setItem("username", data.name || "User");
+          router.push("/");
+          router.refresh(); // Чтобы обновить состояние сервера, если нужно
+        }
       } else {
+        // Успешная регистрация
         setIsLogin(true);
-        setError(null);
+        setMail("");
+        setPassword("");
+        setName("");
+        alert("Account created! Please log in.");
       }
     } catch (err: any) {
+      console.error("Auth error:", err);
       setError(err.message || "Something went wrong");
     } finally {
       setLoading(false);
@@ -72,31 +92,17 @@ export default function LogIn() {
         className={classes.loginCard}
       >
         <div className={classes.toggleContainer}>
-          <div
-            className={`${classes.slider} ${
-              !isLogin ? classes.slideRight : ""
-            }`}
-          />
+          <div className={`${classes.slider} ${!isLogin ? classes.slideRight : ""}`} />
           <button
-            className={`${classes.toggleBtn} ${
-              isLogin ? classes.activeTab : ""
-            }`}
-            onClick={() => {
-                setIsLogin(true);
-                setError(null);
-            }}
+            className={`${classes.toggleBtn} ${isLogin ? classes.activeTab : ""}`}
+            onClick={() => { setIsLogin(true); setError(null); }}
             type="button"
           >
             Log in
           </button>
           <button
-            className={`${classes.toggleBtn} ${
-              !isLogin ? classes.activeTab : ""
-            }`}
-            onClick={() => {
-                setIsLogin(false);
-                setError(null);
-            }}
+            className={`${classes.toggleBtn} ${!isLogin ? classes.activeTab : ""}`}
+            onClick={() => { setIsLogin(false); setError(null); }}
             type="button"
           >
             Sign up
@@ -141,8 +147,8 @@ export default function LogIn() {
                   <input
                     type="email"
                     placeholder="example@study.tube"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    value={mail} // ПОПРАВЛЕНО: было email
+                    onChange={(e) => setMail(e.target.value)} // ПОПРАВЛЕНО: было setEmail
                     required
                   />
                 </div>
@@ -158,33 +164,18 @@ export default function LogIn() {
                   />
                 </div>
 
-                {error && (
-                  <p className={classes.errorText}>{error}</p>
-                )}
+                {error && <p className={classes.errorText}>{error}</p>}
 
-                <button
-                  type="submit"
-                  className={classes.mainBtn}
-                  disabled={loading}
-                >
-                  {loading
-                    ? "Processing..."
-                    : isLogin
-                    ? "Войти в аккаунт"
-                    : "Зарегистрироваться"}
+                <button type="submit" className={classes.mainBtn} disabled={loading}>
+                  {loading ? "Processing..." : isLogin ? "Войти в аккаунт" : "Зарегистрироваться"}
                 </button>
               </form>
             </motion.div>
           </AnimatePresence>
         </div>
 
-        <div className={classes.divider}>
-          <span>OR</span>
-        </div>
-
-        <button className={classes.googleBtn} type="button">
-          Continue with Google
-        </button>
+        <div className={classes.divider}><span>OR</span></div>
+        <button className={classes.googleBtn} type="button">Continue with Google</button>
       </motion.div>
     </div>
   );

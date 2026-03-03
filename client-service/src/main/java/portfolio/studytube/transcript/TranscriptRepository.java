@@ -6,5 +6,5 @@ import portfolio.studytube.video.Video;
 import java.util.Optional;
 
 public interface TranscriptRepository extends JpaRepository<Transcript, Long> {
-    Optional<Transcript> findByVideo(Video video);
+    Optional<Transcript> findByVideoYoutubeId(String youtubeId);
 }

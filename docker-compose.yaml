@@ -1,16 +1,36 @@
 services:
-  postgres:
-    image: pgvector/pgvector:pg16
-    container_name: studytube-postgres
+  # 1. База для пользователей и метаданных (client-service)
+  postgres-client:
+    image: postgres:16-alpine
+    container_name: studytube-db-client
     restart: always
     environment:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
-      POSTGRES_DB: studytube
+      POSTGRES_DB: client_db
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U user -d studytube"]
+      test: ["CMD-SHELL", "pg_isready -U user -d client_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - studytube-network
+
+  # 2. База для Саммари и Векторов (ai-service)
+  postgres-ai:
+    image: pgvector/pgvector:pg16
+    container_name: studytube-db-ai
+    restart: always
+    environment:
+      POSTGRES_USER: ai_user
+      POSTGRES_PASSWORD: ai_password
+      POSTGRES_DB: ai_db
+    ports:
+      - "5433:5432" # Пробрасываем на другой порт хоста, чтобы не конфликтовать с 5432
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ai_user -d ai_db"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -35,30 +55,43 @@ services:
     build: ./frontend
     container_name: studytube-frontend
     restart: always
-    environment:
-      - HOSTNAME=0.0.0.0
     expose:
       - "3000"
     networks:
       - studytube-network
 
-  backend:
-    build: ./backend
-    container_name: studytube-backend
+  client-service:
+    build: ./client-service
+    container_name: studytube-client
     restart: always
     depends_on:
-      postgres:
+      postgres-client:
+        condition: service_healthy
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-client:5432/client_db
+      - SPRING_DATASOURCE_USERNAME=user
+      - SPRING_DATASOURCE_PASSWORD=password
+      - JWT_SECRET=z6B87106967527068564020358d7c6246473c217436214578912345678901234
+    networks:
+      - studytube-network
+
+  ai-service:
+    build: ./ai-service
+    container_name: studytube-ai
+    restart: always
+    depends_on:
+      postgres-ai:
         condition: service_healthy
       redis:
         condition: service_healthy
     environment:
-      # Поменял 'db' на 'postgres', чтобы совпадало с именем сервиса выше
-      - JAVA_OPTS=-Xmx2g -Xms512m
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/studytube
-      - SPRING_DATASOURCE_USERNAME=user
-      - SPRING_DATASOURCE_PASSWORD=password
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-ai:5432/ai_db
+      - SPRING_DATASOURCE_USERNAME=ai_user
+      - SPRING_DATASOURCE_PASSWORD=ai_password
       - SPRING_DATA_REDIS_HOST=redis
       - SPRING_AI_OLLAMA_BASE_URL=http://host.docker.internal:11434
+      - JWT_SECRET=z6B87106967527068564020358d7c6246473c217436214578912345678901234
+      - JWT_EXPIRATION=86400000
     networks:
       - studytube-network
 
@@ -71,7 +104,8 @@ services:
     ports:
       - "80:80"
     depends_on:
-      - backend
+      - client-service
+      - ai-service
       - frontend
     networks:
       - studytube-network
