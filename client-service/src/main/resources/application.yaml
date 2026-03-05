@@ -1,8 +1,10 @@
+server:
+  port: 8080
 spring:
   application:
     name: StudyTube
   datasource:
-    url: jdbc:postgresql://localhost:5432/studytube
+    url: jdbc:postgresql://postgres:5432/studytube
     username: user
     password: password
   jackson:
@@ -25,8 +27,8 @@ spring:
 
 app:
   jwt:
-    secret: ${JWT_SECRET:osjdnccjsab21382198ehsacbsi17^%^&%csdjvbsabcvisa}
-    expiration: 86400000
+    secret: ${JWT_SECRET}
+    expiration: ${JWT_EXPIRATION:86400000} # Сначала ищет в системе, если нет — берет 24ч
   ai:
     chat:
       history-limit: 10
