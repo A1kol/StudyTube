@@ -4,7 +4,6 @@ import classes from "./AddContentModal.module.scss";
 
 interface AddContentModalProps {
   onClose: () => void;
-  //onSubmit теперь ожидает данные, которые мы получили от бэкенда
   onSubmit: (videoData: any) => void;
 }
 
@@ -22,16 +21,11 @@ export default function AddContentModal({ onClose, onSubmit }: AddContentModalPr
     try {
       const token = localStorage.getItem("token");
 
-      // Параметры запроса
       const params = new URLSearchParams();
       params.append("url", url.trim());
-      // Если категория пустая, бэкенд подставит "General" (как мы указали в defaultValue контроллера)
       if (category.trim()) {
         params.append("category", category.trim());
       }
-
-      // Важно: используем относительный путь /api/...,
-      // чтобы запросы корректно проксировались в Docker или на домен
       const response = await fetch(`/api/videos/add?${params.toString()}`, {
         method: "POST",
         headers: {
@@ -41,11 +35,7 @@ export default function AddContentModal({ onClose, onSubmit }: AddContentModalPr
       });
 
       if (response.ok) {
-        // Теперь здесь прилетает объект UserVideo { id, video: {...}, category, createdAt }
         const userVideoData = await response.json();
-
-        // Отправляем наверх только данные видео, чтобы UI (списки и т.д.) работал как раньше
-        // Но при этом у нас теперь есть доступ и к userVideoData.category если нужно
         onSubmit(userVideoData.video);
 
         onClose();

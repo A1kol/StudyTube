@@ -12,6 +12,8 @@ export default function ChatPart({ youtubeId }: ChatPartProps) {
     const [category, setCategory] = useState("");
     const [summaryText, setSummaryText] = useState<string>("");
     const [notesText, setNotesText] = useState<string>("");
+    const [scrollSpeed, setScrollSpeed] = useState(1200);
+    const [showSpeedMenu, setShowSpeedMenu] = useState(false);
 
     const [transcriptData, setTranscriptData] = useState<{content: string, chunks: string} | null>(null);
     const [isTimestampMode, setIsTimestampMode] = useState(false);
@@ -83,25 +85,32 @@ export default function ChatPart({ youtubeId }: ChatPartProps) {
     const slowScrollTo = (target: number) => {
         const container = transcriptScrollRef.current;
         if (!container) return;
+
         const start = container.scrollTop;
         const change = target - start;
-        const duration = 1200;
+        const duration = scrollSpeed;
+
         let startTime: number | null = null;
 
         const easeInOutQuad = (t: number, b: number, c: number, d: number) => {
             t /= d / 2;
             if (t < 1) return (c / 2) * t * t + b;
-            t--; return (-c / 2) * (t * (t - 2) - 1) + b;
+            t--;
+            return (-c / 2) * (t * (t - 2) - 1) + b;
         };
 
         const animateScroll = (currentTime: number) => {
             if (startTime === null) startTime = currentTime;
+
             const progress = currentTime - startTime;
             const val = easeInOutQuad(progress, start, change, duration);
+
             container.scrollTop = val;
+
             if (progress < duration) requestAnimationFrame(animateScroll);
             else container.scrollTop = target;
         };
+
         requestAnimationFrame(animateScroll);
     };
 
@@ -138,7 +147,7 @@ export default function ChatPart({ youtubeId }: ChatPartProps) {
         setIsLoading(true);
         try {
             const response = await fetch(`/api/v1/ai/ask?prompt=${encodeURIComponent(text)}&videoId=${currentYoutubeId}`, {
-                method: 'GET',
+                method: 'POST',
                 headers: getAuthHeaders()
             });
             if (response.ok) {
@@ -237,8 +246,35 @@ const handleGetSummary = async () => {
                             </div>
                         </div>
                         <div className={classes.aboutNavR}>
-                            <div className={classes.autoScrollButton} onClick={handleToggleScroll} style={{ cursor: 'pointer' }}>
-                                <div className={classes.arrows} />{isScrollDirectionDown ? "Scroll Down" : "Scroll Up"}
+                            <div style={{ position: "relative" }}>
+
+                            <div
+                                className={classes.autoScrollButton}
+                                onClick={handleToggleScroll}
+                                style={{ cursor: "pointer" }}
+                            >
+                                <div className={classes.arrows} />
+                                {isScrollDirectionDown ? "Scroll Down" : "Scroll Up"} ⚡
+                            </div>
+
+                            <div
+                                style={{
+                                    position: "absolute",
+                                    right: 0,
+                                    top: "35px",
+                                    background: "#fff",
+                                    border: "1px solid #e2e8f0",
+                                    borderRadius: "8px",
+                                    padding: "6px",
+                                    display: "flex",
+                                    gap: "6px"
+                                }}
+                            >
+                                <button onClick={() => setScrollSpeed(2000)}>Slow</button>
+                                <button onClick={() => setScrollSpeed(1200)}>Normal</button>
+                                <button onClick={() => setScrollSpeed(600)}>Fast</button>
+                            </div>
+
                             </div>
                         </div>
                     </div>

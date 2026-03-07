@@ -7,8 +7,12 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Flux;
 
 import java.util.List;
@@ -36,24 +40,27 @@ public class AiService {
         this.chatClient = ChatClient.create(chatModel);
     }
 
-    // Метод для чата по видео
+
     public String processAsk(Long userId, String videoId, String prompt) {
+        // 1. Получаем транскрипт (с проверкой на null/empty внутри)
+        String videoContent = getOrFetchTranscript(videoId);
+
         String redisKey = "chat_history:" + userId + ":" + videoId;
 
-        // Получаем текст видео (сначала из нашей базы саммари, если там сохранили оригинал, иначе из client-service)
-        String videoContent = summaryRepository.findByYoutubeId(videoId)
-                .map(AiSummary::getRawTranscript)
-                .orElseGet(() -> fetchTranscriptFromClientService(videoId));
-
+        // 2. Работа с историей в Redis
         List<String> history = redisTemplate.opsForList().range(redisKey, -historyLimit, -1);
-        String historyContext = (history != null && !history.isEmpty()) ? String.join("\n", history) : "Начало диалога.";
+        String historyContext = (history != null && !history.isEmpty())
+                ? String.join("\n", history)
+                : "Начало диалога.";
 
+        // 3. Запрос к AI
         String aiResponse = chatClient.prompt()
-                .system("Ты эксперт. Отвечай по тексту видео:\n" + videoContent)
-                .user("История:\n" + historyContext + "\nВопрос: " + prompt)
+                .system("Ты эксперт StudyTube. Отвечай строго по тексту видео:\n" + videoContent)
+                .user("История чата:\n" + historyContext + "\nВопрос: " + prompt)
                 .call()
                 .content();
 
+        // 4. Сохранение истории
         redisTemplate.opsForList().rightPush(redisKey, "U: " + prompt);
         redisTemplate.opsForList().rightPush(redisKey, "AI: " + aiResponse);
         redisTemplate.expire(redisKey, ttlHours, TimeUnit.HOURS);
@@ -61,50 +68,98 @@ public class AiService {
         return aiResponse;
     }
 
-    // Метод для генерации саммари (стриминг)
-    public Flux<String> generateSummaryStream(String videoId) {
-        return Flux.defer(() -> {
-            var existing = summaryRepository.findByYoutubeId(videoId);
 
+    public Flux<String> generateSummaryStream(String videoId) {
+        // Захватываем токен СРАЗУ, пока мы в потоке запроса
+        String authHeader = getCurrentAuthHeader();
+
+        return Flux.defer(() -> {
+            // 1. Проверка в локальной базе AI-сервиса
+            var existing = summaryRepository.findByYoutubeId(videoId);
             if (existing.isPresent() && existing.get().getSummary() != null) {
                 return Flux.just(existing.get().getSummary());
             }
 
-            String videoContent = fetchTranscriptFromClientService(videoId);
-            StringBuilder fullSummary = new StringBuilder();
+            // 2. Получение транскрипта из client-service
+            String videoContent = fetchTranscriptFromClientService(videoId, authHeader);
 
+            if (videoContent == null || videoContent.isBlank()) {
+                log.warn("Транскрипт не найден для видео {}", videoId);
+                return Flux.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "Transcript not ready yet"));
+            }
+
+            // 3. Стриминг от AI
+            StringBuilder fullSummary = new StringBuilder();
             return chatClient.prompt()
-                    .system("Сделай подробный конспект этого видео.")
+                    .system("Сделай подробный и структурированный конспект этого видео на языке оригинала.")
                     .user(videoContent)
                     .stream()
                     .content()
                     .doOnNext(fullSummary::append)
                     .doOnComplete(() -> {
+                        // 4. Сохранение только по завершении
                         AiSummary summary = existing.orElse(new AiSummary());
                         summary.setYoutubeId(videoId);
                         summary.setSummary(fullSummary.toString());
-                        summary.setRawTranscript(videoContent); // Кэшируем оригинал для чата
+                        summary.setRawTranscript(videoContent);
                         summaryRepository.save(summary);
-                        log.info("✅ Конспект сохранен для видео: {}", videoId);
+                        log.info("✅ Конспект успешно сохранен для видео: {}", videoId);
                     });
         }).onErrorResume(e -> {
-            log.error("❌ Ошибка ИИ: {}", e.getMessage());
+            log.error("❌ Ошибка в стриме AI: {}", e.getMessage());
             return Flux.error(e);
         });
     }
 
-    private String fetchTranscriptFromClientService(String youtubeId) {
-        // Стучимся по новому пути, который мы только что создали
+
+    private String getOrFetchTranscript(String videoId) {
+        return summaryRepository.findByYoutubeId(videoId)
+                .map(AiSummary::getRawTranscript)
+                .filter(t -> !t.isBlank())
+                .orElseGet(() -> {
+                    String content = fetchTranscriptFromClientService(videoId, getCurrentAuthHeader());
+                    if (content == null || content.isBlank()) {
+                        throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Transcript for this video is unavailable");
+                    }
+                    return content;
+                });
+    }
+
+
+    private String fetchTranscriptFromClientService(String youtubeId, String authHeader) {
+        if (authHeader == null) {
+            log.error("No Authorization header found for internal request");
+            return null;
+        }
+
         String url = "http://client-service:8080/api/transcripts/by-youtube-id/" + youtubeId;
 
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", authHeader);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<Void> entity = new HttpEntity<>(headers);
+
         try {
-            TranscriptResponseDTO response = restTemplate.getForObject(url, TranscriptResponseDTO.class);
-            return (response != null) ? response.content() : "Текст не найден";
+            ResponseEntity<TranscriptResponseDTO> response = restTemplate.exchange(
+                    url, HttpMethod.GET, entity, TranscriptResponseDTO.class
+            );
+
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                return response.getBody().content();
+            }
+            return null;
         } catch (Exception e) {
-            log.error("Ошибка запроса к client-service: {}", e.getMessage());
-            return "Ошибка: не удалось получить транскрипт.";
+            log.error("❌ Client-Service request failed: {}", e.getMessage());
+            return null;
         }
     }
 
-    public record TranscriptResponseDTO(Long videoId, String content) {}
+
+    private String getCurrentAuthHeader() {
+        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        if (attributes != null) {
+            return attributes.getRequest().getHeader("Authorization");
+        }
+        return null;
+    }
 }
