@@ -22,7 +22,6 @@ export default function ChatPart({ youtubeId }: ChatPartProps) {
     const [messages, setMessages] = useState<{role: 'user' | 'ai', text: string}[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const animationRef = useRef<number | null>(null);
-    const directionRef = useRef<"down" | "up" | null>(null);
 
     const editorRef = useRef<HTMLDivElement>(null);
     const scrollRef = useRef<HTMLDivElement>(null);
@@ -84,41 +83,33 @@ export default function ChatPart({ youtubeId }: ChatPartProps) {
     }, [dbId]);
 
     // --- ФУНКЦИИ СКРОЛЛА И РЕНДЕРА ТАЙМКОДОВ ---
-const slowScrollTo = (target: number, direction: "down" | "up") => {
+const slowScrollTo = (target: number) => {
   const container = transcriptScrollRef.current;
   if (!container) return;
 
-  // Остановка прошлой анимации перед запуском новой
+  // отменяем прошлую анимацию
   if (animationRef.current) {
     cancelAnimationFrame(animationRef.current);
   }
 
-  directionRef.current = direction;
-
   const start = container.scrollTop;
   const distance = target - start;
-  
-  // Рассчитываем длительность исходя из текущего стейта scrollSpeed
-  // scrollSpeed здесь — это пиксели в секунду
-  const duration = (Math.abs(distance) / scrollSpeed) * 1000;
+  const speed = scrollSpeed;
+
+  const duration = Math.abs(distance) / speed * 1000;
 
   let startTime: number | null = null;
 
-  const animateScroll = (time: number) => {
-    if (startTime === null) startTime = time;
+  const animateScroll = (currentTime: number) => {
+    if (startTime === null) startTime = currentTime;
 
-    const progress = time - startTime;
+    const progress = currentTime - startTime;
     const percent = Math.min(progress / duration, 1);
 
-    // Ease-out эффект можно убрать для линейного "автоскролла", 
-    // но для ручного запуска оставим плавность
     container.scrollTop = start + distance * percent;
 
-    if (percent < 1 && directionRef.current === direction) {
+    if (percent < 1) {
       animationRef.current = requestAnimationFrame(animateScroll);
-    } else {
-      directionRef.current = null;
-      animationRef.current = null;
     }
   };
 
@@ -129,61 +120,14 @@ const handleToggleScroll = () => {
   const container = transcriptScrollRef.current;
   if (!container) return;
 
-  // Если анимация уже идет — останавливаем
-  if (animationRef.current) {
-    cancelAnimationFrame(animationRef.current);
-    animationRef.current = null;
-    directionRef.current = null;
-    return;
-  }
-
-  // Запуск скролла в зависимости от текущего стейта направления
   if (isScrollDirectionDown) {
-    slowScrollTo(container.scrollHeight, "down");
+    slowScrollTo(container.scrollHeight);
   } else {
-    slowScrollTo(0, "up");
+    slowScrollTo(0);
   }
 
-  // Инвертируем направление для следующего клика
-  setIsScrollDirectionDown(prev => !prev);
+  setIsScrollDirectionDown(!isScrollDirectionDown);
 };
-
-// Ручной скролл не меняет направление кнопки
-useEffect(() => {
-  const container = transcriptScrollRef.current;
-  if (!container) return;
-
-  const stopScroll = () => {
-    if (animationRef.current) {
-      cancelAnimationFrame(animationRef.current);
-      animationRef.current = null;
-      directionRef.current = null;
-    }
-  };
-
-  container.addEventListener("wheel", stopScroll);
-  container.addEventListener("touchmove", stopScroll);
-
-  return () => {
-    container.removeEventListener("wheel", stopScroll);
-    container.removeEventListener("touchmove", stopScroll);
-  };
-}, []);
-
-const changeSpeed = (speed: number) => {
-  setScrollSpeed(speed);
-  setShowSpeedMenu(false);
-
-  // Если в данный момент идет скролл, перезапускаем его с новой скоростью
-  if (directionRef.current) {
-    const container = transcriptScrollRef.current;
-    if (!container) return;
-    
-    const target = directionRef.current === "down" ? container.scrollHeight : 0;
-    slowScrollTo(target, directionRef.current);
-  }
-};
-
 
     const renderChunks = () => {
         if (!transcriptData?.chunks) return <div style={{color: '#000'}}>Таймкодов нет</div>;
@@ -285,27 +229,6 @@ const handleGetSummary = async () => {
         if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }, [messages, summaryText, isLoading]);
 
-    useEffect(() => {
-  const container = transcriptScrollRef.current;
-  if (!container) return;
-
-const stopScroll = () => {
-  if (animationRef.current) {
-    cancelAnimationFrame(animationRef.current);
-    animationRef.current = null;
-    directionRef.current = null;
-  }
-};
-
-  container.addEventListener("wheel", stopScroll);
-  container.addEventListener("touchmove", stopScroll);
-
-  return () => {
-    container.removeEventListener("wheel", stopScroll);
-    container.removeEventListener("touchmove", stopScroll);
-  };
-}, []);
-
     const onKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
@@ -325,48 +248,57 @@ const stopScroll = () => {
                             <div className={`${classes.transcript} ${!isTimestampMode ? classes.active : ""}`} onClick={() => setIsTimestampMode(false)}>
                                 <div className={classes.icon} /><p className={classes.Name}>Transcript</p>
                             </div>
-                            <div className={`${classes.transcript} ${isTimestampMode ? classes.active : ""}`} onClick={() => setIsTimestampMode(true)}>
+                            <div className={`${classes.chapters} ${isTimestampMode ? classes.active : ""}`} onClick={() => setIsTimestampMode(true)}>
                                 <div className={classes.icon} /><p className={classes.Name}>Timestamps</p>
                             </div>
                         </div>
                         <div className={classes.aboutNavR}>
-                            <div className={classes.autoScrollWrapper} style={{ display: 'flex', alignItems: 'center', gap: '5px', position: 'relative' }}>
-                                
-                                {/* Кнопка Старт/Стоп */}
-                                <div
-                                    className={classes.autoScrollButton}
-                                    onClick={handleToggleScroll}
-                                    style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
-                                >
-                                    <div className={classes.arrows} />
-                                    {/* Если скролл идет — пишем Stop, если нет — направление */}
-                                    {directionRef.current 
-                                        ? "Stop" 
-                                        : (isScrollDirectionDown ? "Scroll Down" : "Scroll Up")
-                                    }
-                                </div>
+                            <div className={classes.autoScrollWrapper}>
 
-                                {/* Выбор скорости */}
-                                <div
-                                    className={classes.speedToggle}
-                                    onClick={() => setShowSpeedMenu(prev => !prev)}
-                                    style={{ cursor: 'pointer', padding: '0 5px' }}
-                                >
-                                    {scrollSpeed === 40 ? "Slow" : scrollSpeed === 70 ? "Normal" : "Fast"} ▾
-                                </div>
-
-                                {showSpeedMenu && (
-                                    <div className={classes.speedMenu} style={{
-                                        position: 'absolute', top: '100%', right: 0, 
-                                        background: '#fff', border: '1px solid #ddd', zIndex: 10,
-                                        borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
-                                    }}>
-                                        <div style={{ padding: '8px 12px', cursor: 'pointer' }} onClick={() => changeSpeed(40)}>Slow</div>
-                                        <div style={{ padding: '8px 12px', cursor: 'pointer' }} onClick={() => changeSpeed(70)}>Normal</div>
-                                        <div style={{ padding: '8px 12px', cursor: 'pointer' }} onClick={() => changeSpeed(500)}>Fast</div>
-                                    </div>
-                                )}
+                            <div
+                                className={classes.autoScrollButton}
+                                onClick={handleToggleScroll}
+                            >
+                                <div className={classes.arrows} />
+                                {isScrollDirectionDown ? "Scroll Down" : "Scroll Up"}
                             </div>
+
+                            <div
+                                className={classes.speedToggle}
+                                onClick={() => setShowSpeedMenu(prev => !prev)}
+                            >
+                                ▾
+                            </div>
+
+                            {showSpeedMenu && (
+                                <div className={classes.speedMenu}>
+                                <div onClick={() => {
+                                setScrollSpeed(40);
+                                setIsScrollDirectionDown(true);
+                                setShowSpeedMenu(false);
+                                }}>
+                                Slow
+                                </div>
+
+                                <div onClick={() => {
+                                setScrollSpeed(70);
+                                setIsScrollDirectionDown(true);
+                                setShowSpeedMenu(false);
+                                }}>
+                                Normal
+                                </div>
+
+                                <div onClick={() => {
+                                setScrollSpeed(500);
+                                setIsScrollDirectionDown(true);
+                                setShowSpeedMenu(false);
+                                }}>
+                                Fast
+                                </div>
+                                </div>
+                            )}
+
+                        </div>
                         </div>
                     </div>
                     <div className={classes.aboutScroller} ref={transcriptScrollRef}>

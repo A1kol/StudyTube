@@ -42,7 +42,7 @@
                 justify-content: space-between;
 
                 .aboutNavL {
-                    width: 38.5%;
+                    width: 40%;
                     height: 100%;
                     padding: 4px 3px;
                     display: flex;
@@ -180,11 +180,24 @@
                 overflow-y: auto; // СКРОЛЛ ТУТ
                 border: 1px solid #e2e8f0;
                 border-radius: 20px;
+                border-top-right-radius: 0;
+                border-bottom-right-radius: 0;
                 background: #fff;
 
-                &::-webkit-scrollbar { width: 4px; }
-                &::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+                &::-webkit-scrollbar {
+                    width: 8px; // Чуть шире, чтобы были видны отступы
+                }
 
+                &::-webkit-scrollbar-track {
+                    background: transparent; // Прозрачный фон дорожки
+                }
+
+                &::-webkit-scrollbar-thumb {
+                    background-color: #cbd5e1;
+                    border-radius: 10px;
+                    /* "Фейковый" отступ: рисуем рамку в цвет фона блока */
+                    border: 2px solid #fff; 
+                }
                 .block {
                     width: 100%;
                     height: auto;
