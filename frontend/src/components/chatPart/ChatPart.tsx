@@ -21,6 +21,8 @@ export default function ChatPart({ youtubeId }: ChatPartProps) {
     const [isScrollDirectionDown, setIsScrollDirectionDown] = useState(true);
     const [messages, setMessages] = useState<{role: 'user' | 'ai', text: string}[]>([]);
     const [isLoading, setIsLoading] = useState(false);
+    const animationRef = useRef<number | null>(null);
+    const directionRef = useRef<"down" | "up" | null>(null);
 
     const editorRef = useRef<HTMLDivElement>(null);
     const scrollRef = useRef<HTMLDivElement>(null);
@@ -82,45 +84,106 @@ export default function ChatPart({ youtubeId }: ChatPartProps) {
     }, [dbId]);
 
     // --- ФУНКЦИИ СКРОЛЛА И РЕНДЕРА ТАЙМКОДОВ ---
-    const slowScrollTo = (target: number) => {
-        const container = transcriptScrollRef.current;
-        if (!container) return;
+const slowScrollTo = (target: number, direction: "down" | "up") => {
+  const container = transcriptScrollRef.current;
+  if (!container) return;
 
-        const start = container.scrollTop;
-        const change = target - start;
-        const duration = scrollSpeed;
+  // Остановка прошлой анимации перед запуском новой
+  if (animationRef.current) {
+    cancelAnimationFrame(animationRef.current);
+  }
 
-        let startTime: number | null = null;
+  directionRef.current = direction;
 
-        const easeInOutQuad = (t: number, b: number, c: number, d: number) => {
-            t /= d / 2;
-            if (t < 1) return (c / 2) * t * t + b;
-            t--;
-            return (-c / 2) * (t * (t - 2) - 1) + b;
-        };
+  const start = container.scrollTop;
+  const distance = target - start;
+  
+  // Рассчитываем длительность исходя из текущего стейта scrollSpeed
+  // scrollSpeed здесь — это пиксели в секунду
+  const duration = (Math.abs(distance) / scrollSpeed) * 1000;
 
-        const animateScroll = (currentTime: number) => {
-            if (startTime === null) startTime = currentTime;
+  let startTime: number | null = null;
 
-            const progress = currentTime - startTime;
-            const val = easeInOutQuad(progress, start, change, duration);
+  const animateScroll = (time: number) => {
+    if (startTime === null) startTime = time;
 
-            container.scrollTop = val;
+    const progress = time - startTime;
+    const percent = Math.min(progress / duration, 1);
 
-            if (progress < duration) requestAnimationFrame(animateScroll);
-            else container.scrollTop = target;
-        };
+    // Ease-out эффект можно убрать для линейного "автоскролла", 
+    // но для ручного запуска оставим плавность
+    container.scrollTop = start + distance * percent;
 
-        requestAnimationFrame(animateScroll);
-    };
+    if (percent < 1 && directionRef.current === direction) {
+      animationRef.current = requestAnimationFrame(animateScroll);
+    } else {
+      directionRef.current = null;
+      animationRef.current = null;
+    }
+  };
 
-    const handleToggleScroll = () => {
-        if (!transcriptScrollRef.current) return;
-        const container = transcriptScrollRef.current;
-        if (isScrollDirectionDown) slowScrollTo(container.scrollHeight);
-        else slowScrollTo(0);
-        setIsScrollDirectionDown(!isScrollDirectionDown);
-    };
+  animationRef.current = requestAnimationFrame(animateScroll);
+};
+
+const handleToggleScroll = () => {
+  const container = transcriptScrollRef.current;
+  if (!container) return;
+
+  // Если анимация уже идет — останавливаем
+  if (animationRef.current) {
+    cancelAnimationFrame(animationRef.current);
+    animationRef.current = null;
+    directionRef.current = null;
+    return;
+  }
+
+  // Запуск скролла в зависимости от текущего стейта направления
+  if (isScrollDirectionDown) {
+    slowScrollTo(container.scrollHeight, "down");
+  } else {
+    slowScrollTo(0, "up");
+  }
+
+  // Инвертируем направление для следующего клика
+  setIsScrollDirectionDown(prev => !prev);
+};
+
+// Ручной скролл не меняет направление кнопки
+useEffect(() => {
+  const container = transcriptScrollRef.current;
+  if (!container) return;
+
+  const stopScroll = () => {
+    if (animationRef.current) {
+      cancelAnimationFrame(animationRef.current);
+      animationRef.current = null;
+      directionRef.current = null;
+    }
+  };
+
+  container.addEventListener("wheel", stopScroll);
+  container.addEventListener("touchmove", stopScroll);
+
+  return () => {
+    container.removeEventListener("wheel", stopScroll);
+    container.removeEventListener("touchmove", stopScroll);
+  };
+}, []);
+
+const changeSpeed = (speed: number) => {
+  setScrollSpeed(speed);
+  setShowSpeedMenu(false);
+
+  // Если в данный момент идет скролл, перезапускаем его с новой скоростью
+  if (directionRef.current) {
+    const container = transcriptScrollRef.current;
+    if (!container) return;
+    
+    const target = directionRef.current === "down" ? container.scrollHeight : 0;
+    slowScrollTo(target, directionRef.current);
+  }
+};
+
 
     const renderChunks = () => {
         if (!transcriptData?.chunks) return <div style={{color: '#000'}}>Таймкодов нет</div>;
@@ -222,6 +285,27 @@ const handleGetSummary = async () => {
         if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }, [messages, summaryText, isLoading]);
 
+    useEffect(() => {
+  const container = transcriptScrollRef.current;
+  if (!container) return;
+
+const stopScroll = () => {
+  if (animationRef.current) {
+    cancelAnimationFrame(animationRef.current);
+    animationRef.current = null;
+    directionRef.current = null;
+  }
+};
+
+  container.addEventListener("wheel", stopScroll);
+  container.addEventListener("touchmove", stopScroll);
+
+  return () => {
+    container.removeEventListener("wheel", stopScroll);
+    container.removeEventListener("touchmove", stopScroll);
+  };
+}, []);
+
     const onKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
@@ -246,35 +330,42 @@ const handleGetSummary = async () => {
                             </div>
                         </div>
                         <div className={classes.aboutNavR}>
-                            <div style={{ position: "relative" }}>
+                            <div className={classes.autoScrollWrapper} style={{ display: 'flex', alignItems: 'center', gap: '5px', position: 'relative' }}>
+                                
+                                {/* Кнопка Старт/Стоп */}
+                                <div
+                                    className={classes.autoScrollButton}
+                                    onClick={handleToggleScroll}
+                                    style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                                >
+                                    <div className={classes.arrows} />
+                                    {/* Если скролл идет — пишем Stop, если нет — направление */}
+                                    {directionRef.current 
+                                        ? "Stop" 
+                                        : (isScrollDirectionDown ? "Scroll Down" : "Scroll Up")
+                                    }
+                                </div>
 
-                            <div
-                                className={classes.autoScrollButton}
-                                onClick={handleToggleScroll}
-                                style={{ cursor: "pointer" }}
-                            >
-                                <div className={classes.arrows} />
-                                {isScrollDirectionDown ? "Scroll Down" : "Scroll Up"} ⚡
-                            </div>
+                                {/* Выбор скорости */}
+                                <div
+                                    className={classes.speedToggle}
+                                    onClick={() => setShowSpeedMenu(prev => !prev)}
+                                    style={{ cursor: 'pointer', padding: '0 5px' }}
+                                >
+                                    {scrollSpeed === 40 ? "Slow" : scrollSpeed === 70 ? "Normal" : "Fast"} ▾
+                                </div>
 
-                            <div
-                                style={{
-                                    position: "absolute",
-                                    right: 0,
-                                    top: "35px",
-                                    background: "#fff",
-                                    border: "1px solid #e2e8f0",
-                                    borderRadius: "8px",
-                                    padding: "6px",
-                                    display: "flex",
-                                    gap: "6px"
-                                }}
-                            >
-                                <button onClick={() => setScrollSpeed(2000)}>Slow</button>
-                                <button onClick={() => setScrollSpeed(1200)}>Normal</button>
-                                <button onClick={() => setScrollSpeed(600)}>Fast</button>
-                            </div>
-
+                                {showSpeedMenu && (
+                                    <div className={classes.speedMenu} style={{
+                                        position: 'absolute', top: '100%', right: 0, 
+                                        background: '#fff', border: '1px solid #ddd', zIndex: 10,
+                                        borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+                                    }}>
+                                        <div style={{ padding: '8px 12px', cursor: 'pointer' }} onClick={() => changeSpeed(40)}>Slow</div>
+                                        <div style={{ padding: '8px 12px', cursor: 'pointer' }} onClick={() => changeSpeed(70)}>Normal</div>
+                                        <div style={{ padding: '8px 12px', cursor: 'pointer' }} onClick={() => changeSpeed(500)}>Fast</div>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
