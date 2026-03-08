@@ -12,6 +12,8 @@ export default function ChatPart({ youtubeId }: ChatPartProps) {
     const [category, setCategory] = useState("");
     const [summaryText, setSummaryText] = useState<string>("");
     const [notesText, setNotesText] = useState<string>("");
+    const [scrollSpeed, setScrollSpeed] = useState(1200);
+    const [showSpeedMenu, setShowSpeedMenu] = useState(false);
 
     const [transcriptData, setTranscriptData] = useState<{content: string, chunks: string} | null>(null);
     const [isTimestampMode, setIsTimestampMode] = useState(false);
@@ -19,6 +21,7 @@ export default function ChatPart({ youtubeId }: ChatPartProps) {
     const [isScrollDirectionDown, setIsScrollDirectionDown] = useState(true);
     const [messages, setMessages] = useState<{role: 'user' | 'ai', text: string}[]>([]);
     const [isLoading, setIsLoading] = useState(false);
+    const animationRef = useRef<number | null>(null);
 
     const editorRef = useRef<HTMLDivElement>(null);
     const scrollRef = useRef<HTMLDivElement>(null);
@@ -80,38 +83,51 @@ export default function ChatPart({ youtubeId }: ChatPartProps) {
     }, [dbId]);
 
     // --- ФУНКЦИИ СКРОЛЛА И РЕНДЕРА ТАЙМКОДОВ ---
-    const slowScrollTo = (target: number) => {
-        const container = transcriptScrollRef.current;
-        if (!container) return;
-        const start = container.scrollTop;
-        const change = target - start;
-        const duration = 1200;
-        let startTime: number | null = null;
+const slowScrollTo = (target: number) => {
+  const container = transcriptScrollRef.current;
+  if (!container) return;
 
-        const easeInOutQuad = (t: number, b: number, c: number, d: number) => {
-            t /= d / 2;
-            if (t < 1) return (c / 2) * t * t + b;
-            t--; return (-c / 2) * (t * (t - 2) - 1) + b;
-        };
+  // отменяем прошлую анимацию
+  if (animationRef.current) {
+    cancelAnimationFrame(animationRef.current);
+  }
 
-        const animateScroll = (currentTime: number) => {
-            if (startTime === null) startTime = currentTime;
-            const progress = currentTime - startTime;
-            const val = easeInOutQuad(progress, start, change, duration);
-            container.scrollTop = val;
-            if (progress < duration) requestAnimationFrame(animateScroll);
-            else container.scrollTop = target;
-        };
-        requestAnimationFrame(animateScroll);
-    };
+  const start = container.scrollTop;
+  const distance = target - start;
+  const speed = scrollSpeed;
 
-    const handleToggleScroll = () => {
-        if (!transcriptScrollRef.current) return;
-        const container = transcriptScrollRef.current;
-        if (isScrollDirectionDown) slowScrollTo(container.scrollHeight);
-        else slowScrollTo(0);
-        setIsScrollDirectionDown(!isScrollDirectionDown);
-    };
+  const duration = Math.abs(distance) / speed * 1000;
+
+  let startTime: number | null = null;
+
+  const animateScroll = (currentTime: number) => {
+    if (startTime === null) startTime = currentTime;
+
+    const progress = currentTime - startTime;
+    const percent = Math.min(progress / duration, 1);
+
+    container.scrollTop = start + distance * percent;
+
+    if (percent < 1) {
+      animationRef.current = requestAnimationFrame(animateScroll);
+    }
+  };
+
+  animationRef.current = requestAnimationFrame(animateScroll);
+};
+
+const handleToggleScroll = () => {
+  const container = transcriptScrollRef.current;
+  if (!container) return;
+
+  if (isScrollDirectionDown) {
+    slowScrollTo(container.scrollHeight);
+  } else {
+    slowScrollTo(0);
+  }
+
+  setIsScrollDirectionDown(!isScrollDirectionDown);
+};
 
     const renderChunks = () => {
         if (!transcriptData?.chunks) return <div style={{color: '#000'}}>Таймкодов нет</div>;
@@ -138,7 +154,7 @@ export default function ChatPart({ youtubeId }: ChatPartProps) {
         setIsLoading(true);
         try {
             const response = await fetch(`/api/v1/ai/ask?prompt=${encodeURIComponent(text)}&videoId=${currentYoutubeId}`, {
-                method: 'GET',
+                method: 'POST',
                 headers: getAuthHeaders()
             });
             if (response.ok) {
@@ -232,14 +248,57 @@ const handleGetSummary = async () => {
                             <div className={`${classes.transcript} ${!isTimestampMode ? classes.active : ""}`} onClick={() => setIsTimestampMode(false)}>
                                 <div className={classes.icon} /><p className={classes.Name}>Transcript</p>
                             </div>
-                            <div className={`${classes.transcript} ${isTimestampMode ? classes.active : ""}`} onClick={() => setIsTimestampMode(true)}>
+                            <div className={`${classes.chapters} ${isTimestampMode ? classes.active : ""}`} onClick={() => setIsTimestampMode(true)}>
                                 <div className={classes.icon} /><p className={classes.Name}>Timestamps</p>
                             </div>
                         </div>
                         <div className={classes.aboutNavR}>
-                            <div className={classes.autoScrollButton} onClick={handleToggleScroll} style={{ cursor: 'pointer' }}>
-                                <div className={classes.arrows} />{isScrollDirectionDown ? "Scroll Down" : "Scroll Up"}
+                            <div className={classes.autoScrollWrapper}>
+
+                            <div
+                                className={classes.autoScrollButton}
+                                onClick={handleToggleScroll}
+                            >
+                                <div className={classes.arrows} />
+                                {isScrollDirectionDown ? "Scroll Down" : "Scroll Up"}
                             </div>
+
+                            <div
+                                className={classes.speedToggle}
+                                onClick={() => setShowSpeedMenu(prev => !prev)}
+                            >
+                                ▾
+                            </div>
+
+                            {showSpeedMenu && (
+                                <div className={classes.speedMenu}>
+                                <div onClick={() => {
+                                setScrollSpeed(40);
+                                setIsScrollDirectionDown(true);
+                                setShowSpeedMenu(false);
+                                }}>
+                                Slow
+                                </div>
+
+                                <div onClick={() => {
+                                setScrollSpeed(70);
+                                setIsScrollDirectionDown(true);
+                                setShowSpeedMenu(false);
+                                }}>
+                                Normal
+                                </div>
+
+                                <div onClick={() => {
+                                setScrollSpeed(500);
+                                setIsScrollDirectionDown(true);
+                                setShowSpeedMenu(false);
+                                }}>
+                                Fast
+                                </div>
+                                </div>
+                            )}
+
+                        </div>
                         </div>
                     </div>
                     <div className={classes.aboutScroller} ref={transcriptScrollRef}>

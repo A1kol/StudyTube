@@ -18,66 +18,65 @@ export default function LogIn() {
 
   const API_URL = "/api/auth";
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setLoading(true);
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setError(null);
+  setLoading(true);
 
-    try {
-      const url = isLogin ? `${API_URL}/login` : `${API_URL}/register`;
-
-      // Формируем тело запроса, используя ПРАВИЛЬНЫЕ имена стейтов
-      const body = isLogin
-        ? { mail, password }
-        : { name, password, mail };
-
-      const res = await fetch(url, {
+  try {
+    if (isLogin) {
+      // LOGIN
+      const res = await fetch(`${API_URL}/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body: JSON.stringify({ mail, password }),
       });
 
-      // 1. Проверка статуса
-      if (!res.ok) {
-        const errorText = await res.text();
-        let errorData;
-        try {
-          errorData = JSON.parse(errorText);
-        } catch {
-          errorData = { error: "Authentication failed" };
-        }
-        throw new Error(errorData.error || errorData.message || "Error");
-      }
+      if (!res.ok) throw new Error("Login failed");
 
-      // 2. Безопасный парсинг JSON
-      const contentType = res.headers.get("content-type");
-      const data = (contentType && contentType.includes("application/json"))
-        ? await res.json()
-        : null;
+      const data = await res.json();
 
-      // 3. Логика обработки успеха
-      if (isLogin) {
-        if (data && data.token) {
-          localStorage.setItem("token", data.token);
-          localStorage.setItem("username", data.name || "User");
-          router.push("/");
-          router.refresh(); // Чтобы обновить состояние сервера, если нужно
-        }
-      } else {
-        // Успешная регистрация
-        setIsLogin(true);
-        setMail("");
-        setPassword("");
-        setName("");
-        alert("Account created! Please log in.");
-      }
-    } catch (err: any) {
-      console.error("Auth error:", err);
-      setError(err.message || "Something went wrong");
-    } finally {
-      setLoading(false);
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("username", data.name || "User");
+
+      router.push("/");
+      router.refresh();
+
+    } else {
+      // REGISTER
+      const registerRes = await fetch(`${API_URL}/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, mail, password }),
+      });
+
+      if (!registerRes.ok) throw new Error("Registration failed");
+
+      // 🔥 после регистрации делаем login
+      const loginRes = await fetch(`${API_URL}/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mail, password }),
+      });
+
+      if (!loginRes.ok) throw new Error("Auto login failed");
+
+      const loginData = await loginRes.json();
+
+      localStorage.setItem("token", loginData.token);
+      localStorage.setItem("username", loginData.name || name || "User");
+
+      router.push("/");
+      router.refresh();
     }
-  };
+
+  } catch (err: any) {
+    console.error("Auth error:", err);
+    setError(err.message || "Something went wrong");
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className={classes.wrapper}>
