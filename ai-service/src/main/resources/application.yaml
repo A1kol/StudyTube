@@ -1,0 +1,39 @@
+server:
+  port: 8081
+spring:
+  application:
+    name: ai-service
+
+  # Настройки Postgres (для хранения Саммари)
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/ai_db}
+    username: ${SPRING_DATASOURCE_USERNAME:ai_user}
+    password: ${SPRING_DATASOURCE_PASSWORD:ai_password}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: create
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  # Настройки Redis (для контекста чата на 24 часа)
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: 6379
+
+  # Настройки Spring AI и Ollama
+  ai:
+    ollama:
+      base-url: ${SPRING_AI_OLLAMA_BASE_URL:http://localhost:11434}
+      chat:
+        options:
+          model: llama3.2
+
+# Безопасность
+jwt:
+  secret: ${JWT_SECRET}
+  expiration: ${JWT_EXPIRATION:86400000}
