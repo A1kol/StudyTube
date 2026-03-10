@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.Date;
 
+
 @Component
 @RequiredArgsConstructor
 public class JwtFilter extends OncePerRequestFilter {
@@ -32,42 +33,39 @@ public class JwtFilter extends OncePerRequestFilter {
                                     @NonNull FilterChain filterChain) throws ServletException, IOException {
         try {
             if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
-                response.setStatus(HttpServletResponse.SC_OK);
-                return;
-            }
-
-            String authHeader = request.getHeader("Authorization");
-
-            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
                 filterChain.doFilter(request, response);
                 return;
             }
 
-            String token = authHeader.substring(7);
+            String authHeader = request.getHeader("Authorization");
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                String token = authHeader.substring(7);
+                Claims claims = jwtService.extractAllClaims(token);
 
-            Claims claims = jwtService.extractAllClaims(token);
-            String userMail = claims.get("mail", String.class);
-
-            if (userMail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 if (claims.getExpiration().after(new Date())) {
+                    String userMail = claims.get("mail", String.class);
                     String userName = claims.getSubject();
                     Long userId = claims.get("id", Long.class);
 
-                    User userPrincipal = User.builder()
-                            .name(userName)
-                            .id(userId)
-                            .mail(userMail)
-                            .build();
+                    if (userMail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                        User userPrincipal = User.builder()
+                                .id(userId)
+                                .name(userName)
+                                .mail(userMail)
+                                .build();
 
-                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                            userPrincipal, null, Collections.emptyList()
-                    );
-                    SecurityContextHolder.getContext().setAuthentication(authToken);
-                } else throw new InvalidTokenException("TOKEN_EXPIRED");
+                        UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                                userPrincipal, null, Collections.emptyList()
+                        );
+                        SecurityContextHolder.getContext().setAuthentication(authToken);
+                    }
+                } else {
+                    throw new InvalidTokenException("TOKEN_EXPIRED");
+                }
             }
 
-
             filterChain.doFilter(request, response);
+
         } catch (RuntimeException e) {
             handlerExceptionResolver.resolveException(request, response, null, e);
         }
