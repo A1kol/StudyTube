@@ -31,6 +31,9 @@ public class VideoService {
 
     @Transactional
     public UserVideo addVideoToUserLibrary(String url, User userFromFilter, String category) {
+        if (userFromFilter == null || userFromFilter.getId() == null) {
+            throw new ServiceException("AUTH_REQUIRED", HttpStatus.UNAUTHORIZED);
+        }
         String youtubeId = extractYoutubeId(url);
 
         Video video = getOrCreateVideo(youtubeId);
@@ -40,9 +43,11 @@ public class VideoService {
 
         return userVideoRepository.findByUserAndVideo(user, video)
                 .map(existingLink -> {
-                    existingLink.setCategory(category);
-                    existingLink.setCreatedAt(LocalDateTime.now());
-                    return userVideoRepository.save(existingLink);
+                    if (!category.equals("General") && !category.isBlank() ) {
+                        existingLink.setCategory(category);
+                    }
+                        existingLink.setCreatedAt(LocalDateTime.now());
+                        return userVideoRepository.save(existingLink);
                 })
                 .orElseGet(() -> {
                     handleUserLibraryLimit(user);

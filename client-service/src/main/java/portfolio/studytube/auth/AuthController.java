@@ -1,22 +1,17 @@
-package portfolio.studytube.user;
+package portfolio.studytube.auth;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import portfolio.studytube.user.dto.LoginRequestDTO;
-import portfolio.studytube.user.dto.RegisterRequestDTO;
-import portfolio.studytube.user.dto.AuthResponseDTO;
-import portfolio.studytube.user.entity.User;
-import portfolio.studytube.user.service.AuthService;
-import portfolio.studytube.user.service.UserService;
+import portfolio.studytube.auth.dto.AuthResponseDTO;
+import portfolio.studytube.auth.dto.LoginRequestDTO;
+import portfolio.studytube.auth.dto.RegisterRequestDTO;
 
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
 public class AuthController {
-    private final UserService userService;
     private final AuthService authService;
 
     @PostMapping("/register")
@@ -28,11 +23,5 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<AuthResponseDTO> login(@Valid @RequestBody LoginRequestDTO userToLogin) {
         return ResponseEntity.ok(authService.executeLogin(userToLogin));
-    }
-
-    @DeleteMapping("/me")
-    public ResponseEntity<Void> deleteMyAccount(@AuthenticationPrincipal User userFromFilter) {
-        userService.deleteUser(userFromFilter);
-        return ResponseEntity.noContent().build();
     }
 }

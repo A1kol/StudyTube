@@ -1,9 +1,9 @@
 package portfolio.studytube.user.mapper;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
-import portfolio.studytube.user.dto.RegisterRequestDTO;
+import portfolio.studytube.auth.dto.RegisterRequestDTO;
 import portfolio.studytube.user.entity.User;
-import portfolio.studytube.user.dto.AuthResponseDTO;
+import portfolio.studytube.auth.dto.AuthResponseDTO;
 
 public class UserMapper {
     public static User toEntity(RegisterRequestDTO authRequestDTO, PasswordEncoder passwordEncoder) {

@@ -393,13 +393,12 @@ const handleGetSummary = async () => {
                     {activeN === "chat" ? (
                     <div className={classes.chatContainer}>
                         {messages.length === 0 ? (
-                        <div
-                            className={classes.backtCont}
-                            style={{ alignSelf: "center", marginTop: "18%" }}
-                        >
-                            <div className={classes.logo}></div>
-                            <div className={classes.title}>
-                            <p className={classes.name}>StudyTube AI</p>
+                        <div className={classes.emptyState}>
+                            <div className={classes.backtCont}>
+                                <div className={classes.logo}></div>
+                                <div className={classes.title}>
+                                <p className={classes.name}>StudyTube AI</p>
+                                </div>
                             </div>
                         </div>
                         ) : (
