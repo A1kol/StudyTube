@@ -42,7 +42,7 @@
                 justify-content: space-between;
 
                 .aboutNavL {
-                    width: 38.5%;
+                    width: 40%;
                     height: 100%;
                     padding: 4px 3px;
                     display: flex;
@@ -56,6 +56,8 @@
                         width: 48%;
                         height: 100%;
                         padding: 6px 12px;
+                        min-width: 120px;
+                        flex: 1;
                         display: flex;
                         align-items: center;
                         justify-content: center;
@@ -81,6 +83,7 @@
                             font-size: 14px;
                             color: #1e293b;
                             font-weight: 400;
+                            white-space: nowrap;
                         }
 
                         &.active {
@@ -93,6 +96,18 @@
                                 background-color: #22c55e;
                             }
                         }
+                    }
+
+                    .icon {
+                        width: 16px;
+                        height: 16px;
+                        min-width: 16px;
+                        min-height: 16px;
+                        flex-shrink: 0; // ключевая строка
+                        background-position: center;
+                        background-repeat: no-repeat;
+                        background-size: contain;
+                        transition: all 0.25s ease;
                     }
 
                     .chapters {
@@ -117,7 +132,7 @@
 
                     .autoScrollWrapper {
                         position: relative;
-                        width: 73%;
+                        width: 100%;
                         height: 100%;
                         display: flex;
                     }
@@ -180,11 +195,24 @@
                 overflow-y: auto; // СКРОЛЛ ТУТ
                 border: 1px solid #e2e8f0;
                 border-radius: 20px;
+                border-top-right-radius: 0;
+                border-bottom-right-radius: 0;
                 background: #fff;
 
-                &::-webkit-scrollbar { width: 4px; }
-                &::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+                &::-webkit-scrollbar {
+                    width: 8px; // Чуть шире, чтобы были видны отступы
+                }
 
+                &::-webkit-scrollbar-track {
+                    background: transparent; // Прозрачный фон дорожки
+                }
+
+                &::-webkit-scrollbar-thumb {
+                    background-color: #cbd5e1;
+                    border-radius: 10px;
+                    /* "Фейковый" отступ: рисуем рамку в цвет фона блока */
+                    border: 2px solid #fff; 
+                }
                 .block {
                     width: 100%;
                     height: auto;
@@ -400,4 +428,155 @@
             }
         }
     }
+}
+
+
+.emptyVideo {
+  width: 100%;
+  height: 100%;
+  border-radius: 20px;
+  background: #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.addButton {
+  padding: 12px 20px;
+  font-size: 15px;
+  border-radius: 12px;
+  border: none;
+  background: #0f172a;
+  color: white;
+  cursor: pointer;
+  transition: 0.2s;
+
+  &:hover {
+    background: #1e293b;
+  }
+}
+
+
+
+
+@media (max-width: 1400px) {
+
+  .wrapper {
+    gap: 8px;
+  }
+
+  .aboutNavL {
+    width: 55% !important;
+  }
+
+  .aboutNavR {
+    width: 40% !important;
+  }
+
+  .autoScrollWrapper {
+    width: 100% !important;
+  }
+
+}
+
+
+
+@media (max-width: 1024px) {
+
+  .wrapper {
+    flex-direction: column;
+    height: auto;
+  }
+
+  .leftPart,
+  .rightPart {
+    width: 100% !important;
+    height: auto !important;
+  }
+
+  .videoCont {
+    height: 380px !important;
+  }
+
+  .AboutMCont {
+    height: 420px !important;
+  }
+
+  .backt {
+    height: 420px !important;
+  }
+
+}
+
+
+
+@media (max-width: 768px) {
+
+  .wrapper {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .aboutNav {
+    flex-direction: column;
+    gap: 6px;
+    height: auto !important;
+  }
+
+  .aboutNavL {
+    width: 100% !important;
+  }
+
+  .aboutNavR {
+    width: 100% !important;
+    justify-content: flex-end;
+  }
+
+  .navbar {
+    height: auto !important;
+    flex-wrap: wrap;
+  }
+
+  .chat,
+  .summary,
+  .notes {
+    flex: 1;
+  }
+
+}
+
+
+
+@media (max-width: 520px) {
+
+  .videoCont {
+    height: 240px !important;
+  }
+
+  .AboutMCont {
+    height: 350px !important;
+  }
+
+  .backt {
+    height: 320px !important;
+  }
+
+  .aboutNavL {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .chapters,
+  .transcript {
+    width: 100% !important;
+  }
+
+  .autoScrollWrapper {
+    width: 100% !important;
+  }
+
+  .editor {
+    font-size: 14px !important;
+  }
+
 }

@@ -3,13 +3,20 @@ import classes from "./LeftBar.module.scss";
 import { useState, useEffect, useRef } from "react";
 import UserSetModal from "../userSettingModal/userSetModal";
 import AddContentModal from "../addContentModal/AddContentModal";
+import { getUserFromToken } from "@/utils/getUserFromToken";
+import { useRouter } from "next/navigation";
+import { addToHistory } from "@/utils/historyStorage";
+import { getRecent } from "@/utils/historyStorage";
+import HistoryModal from "../HistoryModal/HistoryModal";
+import { HistoryItem } from "@/utils/historyStorage";
+import { getYoutubeId } from "@/utils/getYoutubeId";
 
 interface LeftBarProps {
   isOpen: boolean;
-  // Добавил url в описание элементов, чтобы история тоже работала правильно
   recentItemsFromBackend?: { id: string; title: string; url: string }[];
   onVideoSelect?: (videoData: any) => void;
 }
+
 
 export default function LeftBar({ isOpen, recentItemsFromBackend = [], onVideoSelect }: LeftBarProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -18,6 +25,9 @@ export default function LeftBar({ isOpen, recentItemsFromBackend = [], onVideoSe
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [userName, setUserName] = useState<string>("Loading...");
   const menuRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+  const [recentItems, setRecentItems] = useState<any[]>([]);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -31,15 +41,49 @@ export default function LeftBar({ isOpen, recentItemsFromBackend = [], onVideoSe
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isMenuOpen]);
 
-  // Теперь принимаем весь объект (videoData) и прокидываем его дальше без потерь
-  const handleAddContent = (videoData: any) => {
-    console.log("New content added data:", videoData);
-    if (onVideoSelect) {
-      onVideoSelect(videoData);
-    }
-    setIsAddModalOpen(false);
-  };
+  useEffect(() => {
+    setUserName(getUserFromToken());
+  }, []);
 
+  useEffect(() => {
+    setRecentItems(getRecent());
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("username");
+
+    router.push("/login");
+    router.refresh();
+  };
+  
+
+  const handleAddContent = (videoData: any) => {
+    const url = videoData.url || (videoData.youtubeId ? `https://www.youtube.com/watch?v=${videoData.youtubeId}` : null);
+
+    if (!url) return;
+
+    const newItem = {
+      id: videoData.id || Date.now().toString(),
+      title: videoData.title || "Untitled video",
+      url
+    };
+
+    // 1. Сохраняем в localStorage
+    addToHistory(newItem);
+    
+    // 2. Явно обновляем состояние, чтобы меню перерисовалось мгновенно
+    setRecentItems(getRecent());
+
+    onVideoSelect?.({
+      title: newItem.title,
+      youtubeId: getYoutubeId(url)
+    });
+
+    setIsAddModalOpen(false);
+  }
+
+  
   return (
     <>
       <div className={`${classes.wrapper} ${isOpen ? classes.open : ""}`}>
@@ -85,7 +129,10 @@ export default function LeftBar({ isOpen, recentItemsFromBackend = [], onVideoSe
                 <span>Search</span>
               </button>
 
-              <a href="#" className={classes.navItem}>
+              <button
+                className={classes.navItem}
+                onClick={() => setIsHistoryOpen(true)}
+              >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="18" height="18"
@@ -101,7 +148,7 @@ export default function LeftBar({ isOpen, recentItemsFromBackend = [], onVideoSe
                     <path d="M12 7v5l4 2"></path>
                 </svg>
                 <span>History</span>
-              </a>
+              </button>
             </div>
           </div>
 
@@ -132,8 +179,8 @@ export default function LeftBar({ isOpen, recentItemsFromBackend = [], onVideoSe
             <div className={classes.section}>
               <p className={classes.sectionTitle}>Recents</p>
               <div className={classes.group}>
-                {recentItemsFromBackend.length > 0 ? (
-                  recentItemsFromBackend.map((item) => {
+                {recentItems.length > 0 ? (
+                  recentItems.map((item) => {
                     const isActive = activeId === item.id;
                     return (
                       <button
@@ -206,7 +253,10 @@ export default function LeftBar({ isOpen, recentItemsFromBackend = [], onVideoSe
                 Dark Mode
               </button>
               <div className={classes.divider}></div>
-              <button className={`${classes.menuItem} ${classes.logout}`}>
+              <button
+                className={`${classes.menuItem} ${classes.logout}`}
+                onClick={handleLogout}
+              >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
                   <polyline points="16 17 21 12 16 7" />
@@ -230,7 +280,11 @@ export default function LeftBar({ isOpen, recentItemsFromBackend = [], onVideoSe
           >
             <div className={classes.userInfo}>
               <span className={classes.avatar}>
-                <img draggable="false" src="https://lh3.googleusercontent.com/a/ACg8ocKMeWGFRPZyCAByPwWqRT1jL9b0ftQZ4LFguAxumFsbpYSrxAsm=s96-c" alt="Avatar" />
+                <img
+                  draggable="false"
+                  src={`https://ui-avatars.com/api/?name=${userName}&background=random`}
+                  alt="Avatar"
+                />
               </span>
               <div className={classes.nameWrapper}>
                 <p className={classes.userName}>{userName}</p>
@@ -254,6 +308,25 @@ export default function LeftBar({ isOpen, recentItemsFromBackend = [], onVideoSe
         <AddContentModal
             onClose={() => setIsAddModalOpen(false)}
             onSubmit={handleAddContent}
+        />
+      )}
+
+      {isHistoryOpen && (
+        <HistoryModal
+          onClose={()=>setIsHistoryOpen(false)}
+          onSelect={(video: HistoryItem) => {
+
+            const youtubeId = getYoutubeId(video.url)
+
+            if (!youtubeId) return
+
+            onVideoSelect?.({
+              title: video.title,
+              youtubeId
+            })
+
+            setIsHistoryOpen(false)
+          }}
         />
       )}
     </>

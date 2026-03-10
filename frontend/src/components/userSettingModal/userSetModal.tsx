@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import classes from "./UserSetModal.module.scss";
+import { getUserFromToken } from "@/utils/getUserFromToken";
 
 interface UserSetModalProps {
   onClose: () => void;
@@ -8,27 +9,6 @@ interface UserSetModalProps {
 
 export default function UserSetModal({ onClose }: UserSetModalProps) {
   const [userName, setUserName] = useState<string>("Loading...");
-
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      try {
-        // Декодируем payload токена (средняя часть)
-        const base64Url = token.split('.')[1];
-        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-        const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-        }).join(''));
-
-        const payload = JSON.parse(jsonPayload);
-        // В твоем случае имя лежит в 'sub'
-        setUserName(payload.sub || "User");
-      } catch (e) {
-        console.error("Ошибка парсинга токена", e);
-        setUserName("User");
-      }
-    }
-  }, []);
 
   const handleDeleteAccount = async () => {
     const confirmDelete = window.confirm(
@@ -56,6 +36,10 @@ export default function UserSetModal({ onClose }: UserSetModalProps) {
       console.error("Ошибка запроса:", error);
     }
   };
+
+  useEffect(() => {
+    setUserName(getUserFromToken());
+  }, []);
 
   return (
     <div className={classes.backdrop} onClick={onClose}>
