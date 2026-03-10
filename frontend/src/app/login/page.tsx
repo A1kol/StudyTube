@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react"; // Добавили useEffect
 import { useRouter } from "next/navigation";
 import classes from "./loginPage.module.scss";
 import { motion, AnimatePresence } from "framer-motion";
@@ -10,13 +10,42 @@ export default function LogIn() {
   const router = useRouter();
 
   const [name, setName] = useState("");
-  const [mail, setMail] = useState(""); // Используем mail везде единообразно
+  const [mail, setMail] = useState("");
   const [password, setPassword] = useState("");
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const API_URL = "/api/auth";
+
+  // --- ЭТОТ БЛОК НУЖНО ДОБАВИТЬ ---
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get("token");
+    const name = params.get("name");
+    const errorParam = params.get("error");
+
+    if (token) {
+      // Сохраняем данные
+      localStorage.setItem("token", token);
+      localStorage.setItem("username", name ? decodeURIComponent(name) : "User");
+
+      // Убираем параметры из URL для чистоты
+      window.history.replaceState({}, document.title, window.location.pathname);
+
+      // Редирект на главную
+      router.push("/");
+      router.refresh();
+    } else if (errorParam) {
+      setError("Ошибка входа через Google. Попробуйте снова.");
+    }
+  }, [router]);
+
+  const handleGoogleLogin = () => {
+    // Просто перенаправляем на эндпоинт Spring Security
+    window.location.href = "/api/oauth2/authorization/google";
+  };
+  // -------------------------------
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,8 +54,6 @@ export default function LogIn() {
 
     try {
       const url = isLogin ? `${API_URL}/login` : `${API_URL}/register`;
-
-      // Формируем тело запроса, используя ПРАВИЛЬНЫЕ имена стейтов
       const body = isLogin
         ? { mail, password }
         : { name, password, mail };
@@ -37,7 +64,6 @@ export default function LogIn() {
         body: JSON.stringify(body),
       });
 
-      // 1. Проверка статуса
       if (!res.ok) {
         const errorText = await res.text();
         let errorData;
@@ -49,22 +75,19 @@ export default function LogIn() {
         throw new Error(errorData.error || errorData.message || "Error");
       }
 
-      // 2. Безопасный парсинг JSON
       const contentType = res.headers.get("content-type");
       const data = (contentType && contentType.includes("application/json"))
         ? await res.json()
         : null;
 
-      // 3. Логика обработки успеха
       if (isLogin) {
         if (data && data.token) {
           localStorage.setItem("token", data.token);
           localStorage.setItem("username", data.name || "User");
           router.push("/");
-          router.refresh(); // Чтобы обновить состояние сервера, если нужно
+          router.refresh();
         }
       } else {
-        // Успешная регистрация
         setIsLogin(true);
         setMail("");
         setPassword("");
@@ -81,6 +104,7 @@ export default function LogIn() {
 
   return (
     <div className={classes.wrapper}>
+      {/* ... твой декор ... */}
       <div className={classes.bgDecoration}>
         <div className={classes.circle1}></div>
         <div className={classes.circle2}></div>
@@ -147,8 +171,8 @@ export default function LogIn() {
                   <input
                     type="email"
                     placeholder="example@study.tube"
-                    value={mail} // ПОПРАВЛЕНО: было email
-                    onChange={(e) => setMail(e.target.value)} // ПОПРАВЛЕНО: было setEmail
+                    value={mail}
+                    onChange={(e) => setMail(e.target.value)}
                     required
                   />
                 </div>
@@ -175,7 +199,15 @@ export default function LogIn() {
         </div>
 
         <div className={classes.divider}><span>OR</span></div>
-        <button className={classes.googleBtn} type="button">Continue with Google</button>
+
+        {/* ИЗМЕНЕННАЯ КНОПКА GOOGLE */}
+        <button
+          className={classes.googleBtn}
+          type="button"
+          onClick={handleGoogleLogin}
+        >
+          Continue with Google
+        </button>
       </motion.div>
     </div>
   );

@@ -32,6 +32,8 @@ spring:
       chat:
         options:
           model: llama3.2
+          history-limit: 10
+          ttl-hours: 1
 
 # Безопасность
 jwt:

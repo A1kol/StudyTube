@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import portfolio.studytube.exception.ServiceException;
 import portfolio.studytube.security.JwtService;
 import portfolio.studytube.user.dto.LoginRequestDTO;
@@ -22,9 +23,29 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
 
+    /**
+     * Логика для Google OAuth2: поиск или регистрация без пароля
+     */
+    @Transactional
+    public String processOAuthPostLogin(String email, String name) {
+        log.info("Processing OAuth2 login for email: {}", email);
+
+        User user = userRepository.findByMail(email)
+                .orElseGet(() -> {
+                    log.info("Creating new user from Google account: {}", email);
+                    User newUser = User.builder()
+                            .mail(email)
+                            .name(name)
+                            .password(null) // Пароля нет для Google-аккаунтов
+                            .build();
+                    return userRepository.save(newUser);
+                });
+
+        return jwtService.generateToken(user);
+    }
+
     public void executeRegister(RegisterRequestDTO dto) {
         log.info("Attempting to register new user with email: {}", dto.mail());
-
         validateRegistration(dto);
 
         User savedUser = userRepository.save(UserMapper.toEntity(dto, passwordEncoder));
@@ -40,6 +61,12 @@ public class AuthService {
                     return new ServiceException("USER_NOT_FOUND", HttpStatus.NOT_FOUND);
                 });
 
+        // Защита: если пароль null, значит регистрация была через Google
+        if (user.getPassword() == null) {
+            log.warn("Login failed: User {} must login via Google", dto.mail());
+            throw new ServiceException("PLEASE_LOGIN_WITH_GOOGLE", HttpStatus.BAD_REQUEST);
+        }
+
         if (!passwordEncoder.matches(dto.password(), user.getPassword())) {
             log.warn("Login failed: Invalid password for user with email {}", dto.mail());
             throw new ServiceException("INVALID_PASSWORD", HttpStatus.UNAUTHORIZED);
@@ -51,9 +78,9 @@ public class AuthService {
         return UserMapper.toResponse(user, token);
     }
 
-    private void validateRegistration(RegisterRequestDTO dto1) {
-        if (userRepository.existsByMail(dto1.mail()) || userRepository.existsByMail(dto1.mail())) {
-            log.warn("Registration failed: User {} is already exists", dto1.mail());
+    private void validateRegistration(RegisterRequestDTO dto) {
+        if (userRepository.existsByMail(dto.mail())) {
+            log.warn("Registration failed: User {} already exists", dto.mail());
             throw new ServiceException("USER_ALREADY_EXISTS", HttpStatus.CONFLICT);
         }
     }

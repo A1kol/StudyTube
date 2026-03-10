@@ -1,35 +1,40 @@
 server:
   port: 8080
+  forward-headers-strategy: native
+
 spring:
   application:
     name: StudyTube
+
   datasource:
-    url: jdbc:postgresql://postgres:5432/studytube
+    url: jdbc:postgresql://postgres-client:5432/client_db
     username: user
     password: password
-  jackson:
-    deserialization:
-      fail-on-unknown-properties: true
+
   jpa:
     hibernate:
       ddl-auto: update
     show-sql: true
-  data:
-    redis:
-      host: ${SPRING_DATA_REDIS_HOST:localhost}
-      port: 6379
-  ai:
-    ollama:
-      base-url: ${SPRING_AI_OLLAMA_BASE_URL:http://localhost:11434}
-      chat:
-        options:
-          model: llama3.2
+    properties:
+      hibernate:
+        format_sql: true
+
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: 804192436092-3148htjtofqqd4emtk1qr2htf2vn4g9r.apps.googleusercontent.com
+            client-secret: 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
+            scope:
+              - email
+              - profile
+
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: true
 
 app:
   jwt:
     secret: ${JWT_SECRET}
-    expiration: ${JWT_EXPIRATION:86400000} # Сначала ищет в системе, если нет — берет 24ч
-  ai:
-    chat:
-      history-limit: 10
-      ttl-hours: 1
+    expiration: ${JWT_EXPIRATION:86400000}
