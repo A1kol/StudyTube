@@ -132,7 +132,7 @@ public class AiService {
             return null;
         }
 
-        String url = "http://client-service:8080/api/transcripts/by-youtube-id/" + youtubeId;
+        String url = "http://studytube-client:8080/api/transcripts/by-youtube-id/" + youtubeId;
 
         HttpHeaders headers = new HttpHeaders();
         headers.set("Authorization", authHeader);

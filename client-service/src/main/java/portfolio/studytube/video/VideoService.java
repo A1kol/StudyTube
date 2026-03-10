@@ -31,6 +31,9 @@ public class VideoService {
 
     @Transactional
     public UserVideo addVideoToUserLibrary(String url, User userFromFilter, String category) {
+        if (userFromFilter == null || userFromFilter.getId() == null) {
+            throw new ServiceException("AUTH_REQUIRED", HttpStatus.UNAUTHORIZED);
+        }
         String youtubeId = extractYoutubeId(url);
 
         Video video = getOrCreateVideo(youtubeId);

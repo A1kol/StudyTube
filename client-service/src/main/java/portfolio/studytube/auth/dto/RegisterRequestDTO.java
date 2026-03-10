@@ -1,4 +1,4 @@
-package portfolio.studytube.user.dto;
+package portfolio.studytube.auth.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;

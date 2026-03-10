@@ -1,4 +1,4 @@
-package portfolio.studytube.user.service;
+package portfolio.studytube.auth;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -6,14 +6,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import portfolio.studytube.auth.dto.AuthResponseDTO;
 import portfolio.studytube.exception.ServiceException;
 import portfolio.studytube.security.JwtService;
-import portfolio.studytube.user.dto.LoginRequestDTO;
+import portfolio.studytube.auth.dto.LoginRequestDTO;
 import portfolio.studytube.user.mapper.UserMapper;
 import portfolio.studytube.user.entity.User;
 import portfolio.studytube.user.repository.UserRepository;
-import portfolio.studytube.user.dto.RegisterRequestDTO;
-import portfolio.studytube.user.dto.AuthResponseDTO;
+import portfolio.studytube.auth.dto.RegisterRequestDTO;
 
 @Slf4j
 @Service
