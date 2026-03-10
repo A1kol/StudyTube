@@ -4,10 +4,26 @@ import classes from "./Header.module.scss";
 type HeaderProps = {
     isOpen: boolean;
     toggle: () => void;
-    videoTitle?: string; // Название видео из БД или пропса
+    videoTitle?: string;
+    youtubeId?: string;
 };
 
-export default function Header({ isOpen, toggle, videoTitle }: HeaderProps) {
+export default function Header({ isOpen, toggle, videoTitle, youtubeId }: HeaderProps) {
+
+    const handleShare = async () => {
+        if (!youtubeId) return;
+
+        const shareUrl = `${window.location.origin}?video=${youtubeId}`;
+
+        try {
+            await navigator.clipboard.writeText(shareUrl);
+            alert("Share link copied!");
+        } catch {
+            prompt("Copy this link:", shareUrl);
+        }
+    };
+
+
     return (
         <div className={classes.wrapper}>
             <div className={classes.insideWrapper}>
@@ -26,7 +42,6 @@ export default function Header({ isOpen, toggle, videoTitle }: HeaderProps) {
                     </div>
 
                     <div className={classes.videoNameContainer}>
-                        {/* Если названия нет (видео не выбрано), показываем заглушку */}
                         <p className={classes.videoName}>
                             {videoTitle || "Untitled Video"}
                         </p>
@@ -34,9 +49,8 @@ export default function Header({ isOpen, toggle, videoTitle }: HeaderProps) {
                 </div>
 
                 <div className={classes.rightPart}>
-                    {/* Твои кнопки в правой части */}
                     <div className={classes.actions}>
-                        <button className={classes.shareButton}>
+                        <button className={classes.shareButton} onClick={handleShare}>
                             <svg
                                 width="16"
                                 height="16"

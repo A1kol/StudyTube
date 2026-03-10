@@ -4,32 +4,40 @@ import classes from "./Main.module.scss";
 import Header from "../Header/Header";
 import LeftBar from "../LeftBar/LeftBar";
 import ChatPart from "../chatPart/ChatPart";
+import AddContentModal from "../addContentModal/AddContentModal";
 import { useRouter } from "next/navigation";
 
 export default function Main() {
     const [isOpen, setIsOpen] = useState(false);
-    const [isAuthorized, setIsAuthorized] = useState(false);
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const router = useRouter();
 
     useEffect(() => {
         const token = localStorage.getItem("token");
-        
+
         if (!token) {
-            // Если токена нет, кидаем на страницу логина
-            router.push("/login"); 
-        } else {
-            setIsAuthorized(true);
+            router.push("/login");
         }
-    }, [router]);
+    }, []);
 
-    // Пока идет проверка, лучше ничего не рендерить или показать спиннер
-    if (!isAuthorized) {
-        return null; // или <div className={classes.loader}>Loading...</div>
-    }
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const video = params.get("video");
 
-    const [currentVideo, setCurrentVideo] = useState({
-        title: "Introduction to StudyAI",
-        youtubeId: "T7ZKNoB98ok"
+        if (video) {
+            setCurrentVideo({
+                title: "Loading...",
+                youtubeId: video
+            });
+        }
+    }, []);
+
+    const [currentVideo, setCurrentVideo] = useState<{
+        title: string;
+        youtubeId?: string;
+    }>({
+        title: "",
+        youtubeId: undefined
     });
 
     const handleVideoChange = (data: any) => {
@@ -44,6 +52,15 @@ export default function Main() {
         });
     };
 
+    
+
+    const handleTitleFetched = (title: string) => {
+        setCurrentVideo(prev => ({
+            ...prev,
+            title
+        }));
+    };
+
     return (
         <div className={classes.wrapper}>
             <LeftBar
@@ -56,13 +73,22 @@ export default function Main() {
                     isOpen={isOpen}
                     toggle={() => setIsOpen(p => !p)}
                     videoTitle={currentVideo.title}
+                    youtubeId={currentVideo.youtubeId}
                 />
 
                 <ChatPart
                     key={currentVideo.youtubeId}
                     youtubeId={currentVideo.youtubeId}
+                    onTitleFetched={handleTitleFetched}
+                    onOpenAddModal={() => setIsAddModalOpen(true)}
                 />
             </div>
+            {isAddModalOpen && (
+                <AddContentModal
+                    onClose={() => setIsAddModalOpen(false)}
+                    onSubmit={handleVideoChange}
+                />
+            )}
         </div>
     );
 }

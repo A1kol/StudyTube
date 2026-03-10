@@ -3,13 +3,20 @@ import classes from "./LeftBar.module.scss";
 import { useState, useEffect, useRef } from "react";
 import UserSetModal from "../userSettingModal/userSetModal";
 import AddContentModal from "../addContentModal/AddContentModal";
-import { useRouter } from "next/router";
+import { getUserFromToken } from "@/utils/getUserFromToken";
+import { useRouter } from "next/navigation";
+import { addToHistory } from "@/utils/historyStorage";
+import { getRecent } from "@/utils/historyStorage";
+import HistoryModal from "../HistoryModal/HistoryModal";
+import { HistoryItem } from "@/utils/historyStorage";
+import { getYoutubeId } from "@/utils/getYoutubeId";
 
 interface LeftBarProps {
   isOpen: boolean;
   recentItemsFromBackend?: { id: string; title: string; url: string }[];
   onVideoSelect?: (videoData: any) => void;
 }
+
 
 export default function LeftBar({ isOpen, recentItemsFromBackend = [], onVideoSelect }: LeftBarProps) {
   
@@ -20,76 +27,9 @@ export default function LeftBar({ isOpen, recentItemsFromBackend = [], onVideoSe
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   const [userName, setUserName] = useState<string>("Loading...");
-  const [username, setUsername] = useState<string>("");
-
-  const [videoUrl, setVideoUrl] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
   const router = useRouter();
-
-  const [items, setItems] = useState(recentItemsFromBackend);
-
-  useEffect(() => {
-    setItems(recentItemsFromBackend);
-  }, [recentItemsFromBackend]);
-
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("username");
-    router.push("/login");
-  };
-
-const handleAddVideo = async () => {
-    if (!videoUrl.trim()) return;
-    
-    try {
-        setIsSubmitting(true);
-        const token = localStorage.getItem("token");
-
-        // Формируем URL с параметром. Важно использовать encodeURIComponent для ссылки!
-        const apiUrl = `http://localhost:8080/api/videos/add?url=${encodeURIComponent(videoUrl.trim())}`;
-
-        const response = await fetch(`http://localhost:8080/api/videos/add`, {
-            method: "POST",
-            headers: {
-                "Authorization": `Bearer ${token}`,
-                "Content-Type": "application/x-www-form-urlencoded", // Для RequestParam
-            },
-            body: new URLSearchParams({ url: videoUrl.trim() }) // Отправляем как форму
-        });
-
-        console.log("Status Code:", response.status);
-
-        if (response.status === 403) {
-            console.error("Доступ запрещен (403). Проверь: 1. Валидность JWT. 2. Права пользователя (Role). 3. Настройку CORS на бэкенде.");
-            alert("Ошибка 403: Недостаточно прав или сессия истекла");
-            return;
-        }
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Ошибка сервера: ${response.status} ${errorText}`);
-        }
-
-        const newVideo = await response.json();
-        setItems(prev => [newVideo, ...prev]);
-        setVideoUrl("");
-        setIsAddModalOpen(false);
-
-        router.push(`/?v=${newVideo.youtubeId}`);
-    } catch (error) {
-        console.error("Full Error Info:", error);
-        alert(error instanceof Error ? error.message : "Неизвестная ошибка");
-    } finally {
-        setIsSubmitting(false);
-    }
-};
-  useEffect(() => {
-    const storedName = localStorage.getItem("username");
-    if (storedName) {
-      setUsername(storedName);
-    }
-  }, []);
+  const [recentItems, setRecentItems] = useState<any[]>([]);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -103,15 +43,49 @@ const handleAddVideo = async () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isMenuOpen]);
 
-  // Теперь принимаем весь объект (videoData) и прокидываем его дальше без потерь
-  const handleAddContent = (videoData: any) => {
-    console.log("New content added data:", videoData);
-    if (onVideoSelect) {
-      onVideoSelect(videoData);
-    }
-    setIsAddModalOpen(false);
-  };
+  useEffect(() => {
+    setUserName(getUserFromToken());
+  }, []);
 
+  useEffect(() => {
+    setRecentItems(getRecent());
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("username");
+
+    router.push("/login");
+    router.refresh();
+  };
+  
+
+  const handleAddContent = (videoData: any) => {
+    const url = videoData.url || (videoData.youtubeId ? `https://www.youtube.com/watch?v=${videoData.youtubeId}` : null);
+
+    if (!url) return;
+
+    const newItem = {
+      id: videoData.id || Date.now().toString(),
+      title: videoData.title || "Untitled video",
+      url
+    };
+
+    // 1. Сохраняем в localStorage
+    addToHistory(newItem);
+    
+    // 2. Явно обновляем состояние, чтобы меню перерисовалось мгновенно
+    setRecentItems(getRecent());
+
+    onVideoSelect?.({
+      title: newItem.title,
+      youtubeId: getYoutubeId(url)
+    });
+
+    setIsAddModalOpen(false);
+  }
+
+  
   return (
     <>
       <div className={`${classes.wrapper} ${isOpen ? classes.open : ""}`}>
@@ -157,7 +131,10 @@ const handleAddVideo = async () => {
                 <span>Search</span>
               </button>
 
-              <a href="#" className={classes.navItem}>
+              <button
+                className={classes.navItem}
+                onClick={() => setIsHistoryOpen(true)}
+              >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="18" height="18"
@@ -173,7 +150,7 @@ const handleAddVideo = async () => {
                     <path d="M12 7v5l4 2"></path>
                 </svg>
                 <span>History</span>
-              </a>
+              </button>
             </div>
           </div>
 
@@ -204,8 +181,8 @@ const handleAddVideo = async () => {
             <div className={classes.section}>
               <p className={classes.sectionTitle}>Recents</p>
               <div className={classes.group}>
-                {items && items.length > 0 ? (
-                  items.map((item) => {
+                {recentItems.length > 0 ? (
+                  recentItems.map((item) => {
                     const isActive = activeId === item.id;
                     return (
                       <button
@@ -278,7 +255,10 @@ const handleAddVideo = async () => {
                 Dark Mode
               </button>
               <div className={classes.divider}></div>
-              <button className={`${classes.menuItem} ${classes.logout}`}>
+              <button
+                className={`${classes.menuItem} ${classes.logout}`}
+                onClick={handleLogout}
+              >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
                   <polyline points="16 17 21 12 16 7" />
@@ -302,7 +282,11 @@ const handleAddVideo = async () => {
           >
             <div className={classes.userInfo}>
               <span className={classes.avatar}>
-                <img draggable="false" src="https://lh3.googleusercontent.com/a/ACg8ocKMeWGFRPZyCAByPwWqRT1jL9b0ftQZ4LFguAxumFsbpYSrxAsm=s96-c" alt="Avatar" />
+                <img
+                  draggable="false"
+                  src={`https://ui-avatars.com/api/?name=${userName}&background=random`}
+                  alt="Avatar"
+                />
               </span>
               <div className={classes.nameWrapper}>
                 <p className={classes.userName}>{userName}</p>
@@ -326,6 +310,25 @@ const handleAddVideo = async () => {
         <AddContentModal
             onClose={() => setIsAddModalOpen(false)}
             onSubmit={handleAddContent}
+        />
+      )}
+
+      {isHistoryOpen && (
+        <HistoryModal
+          onClose={()=>setIsHistoryOpen(false)}
+          onSelect={(video: HistoryItem) => {
+
+            const youtubeId = getYoutubeId(video.url)
+
+            if (!youtubeId) return
+
+            onVideoSelect?.({
+              title: video.title,
+              youtubeId
+            })
+
+            setIsHistoryOpen(false)
+          }}
         />
       )}
     </>

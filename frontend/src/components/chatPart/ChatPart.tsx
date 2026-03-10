@@ -4,10 +4,12 @@ import { useState, useRef, useEffect } from "react"
 
 interface ChatPartProps {
     youtubeId?: string;
-    videoUrl?: string;
+    onTitleFetched?: (title: string) => void;
+    onOpenAddModal?: () => void;
 }
 
-export default function ChatPart({ youtubeId }: ChatPartProps) {
+export default function ChatPart({ youtubeId, onTitleFetched, onOpenAddModal }: ChatPartProps) {
+    
     const [activeN, setActiveN] = useState<"chat" | "summary" | "notes">("chat");
     const [category, setCategory] = useState("");
     const [summaryText, setSummaryText] = useState<string>("");
@@ -22,12 +24,40 @@ export default function ChatPart({ youtubeId }: ChatPartProps) {
     const [messages, setMessages] = useState<{role: 'user' | 'ai', text: string}[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const animationRef = useRef<number | null>(null);
+    const [videoTitle, setVideoTitle] = useState<string>("");
 
     const editorRef = useRef<HTMLDivElement>(null);
     const scrollRef = useRef<HTMLDivElement>(null);
     const transcriptScrollRef = useRef<HTMLDivElement>(null);
 
     const currentYoutubeId = youtubeId;
+
+    useEffect(() => {
+        const fetchTitle = async () => {
+            if (!currentYoutubeId) return;
+
+            try {
+                const res = await fetch(
+                    `https://noembed.com/embed?url=https://www.youtube.com/watch?v=${currentYoutubeId}`
+                );
+
+                const data = await res.json();
+
+                if (data?.title) {
+                    setVideoTitle(data.title);
+
+                    // сообщаем родителю
+                    if (onTitleFetched) {
+                        onTitleFetched(data.title);
+                    }
+                }
+            } catch (err) {
+                console.error("Ошибка получения названия видео", err);
+            }
+        };
+
+        fetchTitle();
+    }, [currentYoutubeId]);
 
     const getAuthHeaders = (): Record<string, string> => {
         if (typeof window === 'undefined') return {};
@@ -240,7 +270,25 @@ const handleGetSummary = async () => {
         <div className={classes.wrapper}>
             <div className={classes.leftPart}>
                 <div className={classes.videoCont}>
-                    <iframe key={currentYoutubeId} className={classes.video} src={`https://www.youtube.com/embed/${currentYoutubeId}`} title="Player" frameBorder="0" allowFullScreen />
+                    {currentYoutubeId ? (
+                        <iframe
+                            key={currentYoutubeId}
+                            className={classes.video}
+                            src={`https://www.youtube.com/embed/${currentYoutubeId}`}
+                            title="Player"
+                            frameBorder="0"
+                            allowFullScreen
+                        />
+                    ) : (
+                        <div className={classes.emptyVideo}>
+                            <button
+                                className={classes.addButton}
+                                onClick={() => onOpenAddModal?.()}
+                            >
+                                + Add content
+                            </button>
+                        </div>
+                    )}
                 </div>
                 <div className={classes.AboutMCont}>
                     <div className={classes.aboutNav}>

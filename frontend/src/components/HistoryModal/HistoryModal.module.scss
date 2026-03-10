@@ -1,0 +1,63 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+
+  background: rgba(0,0,0,0.55);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  z-index: 1000;
+}
+
+.modal {
+  width: 420px;
+  max-height: 70vh;
+
+  background: #1c1c1c;
+  border-radius: 14px;
+
+  padding: 24px;
+
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+
+  overflow-y: auto;
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 600;
+
+  margin-bottom: 16px;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.item {
+  text-align: left;
+
+  padding: 10px 12px;
+
+  border-radius: 8px;
+  border: none;
+
+  background: transparent;
+  color: #fff;
+
+  cursor: pointer;
+
+  transition: background 0.2s;
+}
+
+.item:hover {
+  background: rgba(255,255,255,0.08);
+}
+
+.empty {
+  opacity: 0.6;
+}
