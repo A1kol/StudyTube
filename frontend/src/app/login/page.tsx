@@ -205,6 +205,7 @@ export default function LogIn() {
           type="button"
           onClick={handleGoogleLogin}
         >
+
           Continue with Google
         </button>
       </motion.div>
