@@ -1,6 +1,7 @@
 'use client'
 import classes from "./ChatPart.module.scss"
 import { useState, useRef, useEffect } from "react"
+import ReactMarkdown from "react-markdown";
 
 interface ChatPartProps {
     youtubeId?: string;
@@ -46,7 +47,6 @@ export default function ChatPart({ youtubeId, onTitleFetched, onOpenAddModal }: 
                 if (data?.title) {
                     setVideoTitle(data.title);
 
-                    // сообщаем родителю
                     if (onTitleFetched) {
                         onTitleFetched(data.title);
                     }
@@ -112,52 +112,54 @@ export default function ChatPart({ youtubeId, onTitleFetched, onOpenAddModal }: 
         return () => clearTimeout(timer);
     }, [dbId]);
 
-    // --- ФУНКЦИИ СКРОЛЛА И РЕНДЕРА ТАЙМКОДОВ ---
-const slowScrollTo = (target: number) => {
-  const container = transcriptScrollRef.current;
-  if (!container) return;
+    const slowScrollTo = (target: number) => {
+    const container = transcriptScrollRef.current;
+    if (!container) return;
 
-  // отменяем прошлую анимацию
-  if (animationRef.current) {
-    cancelAnimationFrame(animationRef.current);
-  }
-
-  const start = container.scrollTop;
-  const distance = target - start;
-  const speed = scrollSpeed;
-
-  const duration = Math.abs(distance) / speed * 1000;
-
-  let startTime: number | null = null;
-
-  const animateScroll = (currentTime: number) => {
-    if (startTime === null) startTime = currentTime;
-
-    const progress = currentTime - startTime;
-    const percent = Math.min(progress / duration, 1);
-
-    container.scrollTop = start + distance * percent;
-
-    if (percent < 1) {
-      animationRef.current = requestAnimationFrame(animateScroll);
+    if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
     }
-  };
 
-  animationRef.current = requestAnimationFrame(animateScroll);
-};
+    const start = container.scrollTop;
+    const distance = target - start;
+    const speed = scrollSpeed;
 
-const handleToggleScroll = () => {
-  const container = transcriptScrollRef.current;
-  if (!container) return;
+    const duration = Math.abs(distance) / speed * 1000;
 
-  if (isScrollDirectionDown) {
-    slowScrollTo(container.scrollHeight);
-  } else {
-    slowScrollTo(0);
-  }
+    const copyText = (text: string) => {
+        navigator.clipboard.writeText(text);
+    };
 
-  setIsScrollDirectionDown(!isScrollDirectionDown);
-};
+    let startTime: number | null = null;
+
+    const animateScroll = (currentTime: number) => {
+        if (startTime === null) startTime = currentTime;
+
+        const progress = currentTime - startTime;
+        const percent = Math.min(progress / duration, 1);
+
+        container.scrollTop = start + distance * percent;
+
+        if (percent < 1) {
+        animationRef.current = requestAnimationFrame(animateScroll);
+        }
+    };
+
+    animationRef.current = requestAnimationFrame(animateScroll);
+    };
+
+    const handleToggleScroll = () => {
+    const container = transcriptScrollRef.current;
+    if (!container) return;
+
+    if (isScrollDirectionDown) {
+        slowScrollTo(container.scrollHeight);
+    } else {
+        slowScrollTo(0);
+    }
+
+    setIsScrollDirectionDown(!isScrollDirectionDown);
+    };
 
     const renderChunks = () => {
         if (!transcriptData?.chunks) return <div style={{color: '#000'}}>Таймкодов нет</div>;
@@ -175,7 +177,6 @@ const handleToggleScroll = () => {
         } catch (e) { return <div style={{color: '#000'}}>Ошибка отображения</div>; }
     };
 
-    // --- ОБРАБОТКА СООБЩЕНИЙ И САММАРИ ---
     const handleSendMessage = async () => {
         const text = editorRef.current?.innerText.trim();
         if (!text || isLoading) return;
@@ -247,13 +248,13 @@ const handleGetSummary = async () => {
                 }
             });
         }
-    } catch (error) {
-        console.error("Summary fetch error:", error);
-        setSummaryText(prev => prev.length > 0 ? prev : "Ошибка при генерации конспекта.");
-    } finally {
-        setIsLoading(false);
-    }
-};
+        } catch (error) {
+            console.error("Summary fetch error:", error);
+            setSummaryText(prev => prev.length > 0 ? prev : "Ошибка при генерации конспекта.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     useEffect(() => {
         if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -274,19 +275,23 @@ const handleGetSummary = async () => {
                         <iframe
                             key={currentYoutubeId}
                             className={classes.video}
-                            src={`https://www.youtube.com/embed/${currentYoutubeId}`}
+                            src={`https://www.youtube.com/embed/${currentYoutubeId}?rel=0&showinfo=0`}
                             title="Player"
                             frameBorder="0"
                             allowFullScreen
                         />
                     ) : (
                         <div className={classes.emptyVideo}>
-                            <button
-                                className={classes.addButton}
-                                onClick={() => onOpenAddModal?.()}
-                            >
-                                + Add content
-                            </button>
+                            <div className={classes.emptyContent}>
+                                <div className={classes.iconPlaceholder}>+</div>
+                                <p>No video selected yet</p>
+                                <button
+                                    className={classes.addButton}
+                                    onClick={() => onOpenAddModal?.()}
+                                >
+                                    Add content
+                                </button>
+                            </div>
                         </div>
                     )}
                 </div>
@@ -374,81 +379,164 @@ const handleGetSummary = async () => {
                     </div>
                 </div>
 
-                <div className={classes.backt} style={{ flex: 1, overflow: 'hidden' }}>
-                    <div ref={scrollRef} className="custom-scroll" style={{ width: '100%', height: '100%', overflowY: 'auto', padding: '15px' }}>
-                        {activeN === 'chat' ? (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                {messages.length === 0 ? (
-                                <div className={classes.backtCont} style={{ alignSelf: 'center', marginTop: '20%' }}>
-                                    <div className={classes.logo}></div>
-                                    <div className={classes.title}>
-                                    <p className={classes.name}>StudyTube AI</p>
-                                    </div>
+                <div className={classes.backt} style={{ flex: 1, overflow: "hidden" }}>
+                <div
+                    ref={scrollRef}
+                    className="custom-scroll"
+                    style={{
+                    width: "100%",
+                    height: "100%",
+                    overflowY: "auto",
+                    padding: "18px"
+                    }}
+                >
+                    {activeN === "chat" ? (
+                    <div className={classes.chatContainer}>
+                        {messages.length === 0 ? (
+                        <div
+                            className={classes.backtCont}
+                            style={{ alignSelf: "center", marginTop: "18%" }}
+                        >
+                            <div className={classes.logo}></div>
+                            <div className={classes.title}>
+                            <p className={classes.name}>StudyTube AI</p>
+                            </div>
+                        </div>
+                        ) : (
+                        messages.map((m, i) => (
+                            <div
+                            key={i}
+                            className={classes.messageRow}
+                            style={{
+                                flexDirection: m.role === "user" ? "row-reverse" : "row"
+                            }}
+                            >
+                            {/* Avatar */}
+                            <div className={classes.avatar}>
+                                {m.role === "user" ? "🧑" : "🤖"}
+                            </div>
+
+                            {/* Message */}
+                            <div
+                                className={`${classes.messageBubble} ${
+                                m.role === "user"
+                                    ? classes.userBubble
+                                    : classes.aiBubble
+                                }`}
+                            >
+                                <div className={classes.messageContent}>
+                                <ReactMarkdown>{m.text}</ReactMarkdown>
                                 </div>
-                                ) : (
-                                messages.map((m, i) => (
-                                    <div
-                                    key={i}
-                                    style={{
-                                        alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start',
-                                        maxWidth: '85%'
-                                    }}
+
+                                {m.role === "ai" && (
+                                <div className={classes.messageActions}>
+                                    <button
+                                    onClick={() =>
+                                        navigator.clipboard.writeText(m.text)
+                                    }
                                     >
-                                    <div
-                                        style={{
-                                        padding: '10px 14px',
-                                        borderRadius: '14px',
-                                        fontSize: '14px',
-                                        background: m.role === 'user' ? '#0f172a' : '#f1f5f9',
-                                        color: m.role === 'user' ? '#fff' : '#000'
-                                        }}
-                                    >
-                                        {m.text}
-                                    </div>
-                                    </div>
-                                ))
+                                    Copy
+                                    </button>
+                                </div>
                                 )}
                             </div>
-                            ) : activeN === 'summary' ? (
-                            <div style={{ color: '#000' }}>
-                                <h3 style={{ marginBottom: '15px', fontSize: '18px' }}>📝 Summary</h3>
-                                <div style={{ whiteSpace: 'pre-wrap', fontSize: '14px', lineHeight: '1.6' }}>
-                                {summaryText}
-                                </div>
                             </div>
-                            ) : (
-                            <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                                <h3 style={{ color: '#000', marginBottom: '10px', fontSize: '18px' }}>📓 Notes</h3>
-                                <textarea
-                                value={notesText}
-                                onChange={(e) => setNotesText(e.target.value)}
-                                placeholder="Write your notes here..."
-                                style={{
-                                    flex: 1,
-                                    width: '100%',
-                                    padding: '12px',
-                                    borderRadius: '10px',
-                                    border: '1px solid #e2e8f0',
-                                    background: '#f8fafc',
-                                    fontSize: '14px',
-                                    resize: 'none',
-                                    outline: 'none',
-                                    color: '#000'
-                                }}
-                                />
-                            </div>
-                            )}
-                        {isLoading && activeN !== 'notes' && <p style={{ fontSize: '12px', color: '#94a3b8', marginTop: '10px' }}>AI thinking...</p>}
-                    </div>
-                    </div>
+                        ))
+                        )}
 
-                {activeN === 'chat' && (
-                    <div className={classes.inputCont}>
-                        <div className={classes.editorWrapper}>
-                            <div ref={editorRef} className={classes.editor} contentEditable role="textbox" data-placeholder="Ask anything..." onKeyDown={onKeyDown}></div>
+                        {/* AI typing */}
+                        {isLoading && (
+                        <div className={classes.messageRow}>
+                            <div className={classes.avatar}>🤖</div>
+
+                            <div className={classes.aiBubble}>
+                            <div className={classes.typing}>
+                                <span></span>
+                                <span></span>
+                                <span></span>
+                            </div>
+                            </div>
+                        </div>
+                        )}
+                    </div>
+                    ) : activeN === "summary" ? (
+                    <div style={{ color: "#000" }}>
+                        <h3 style={{ marginBottom: "15px", fontSize: "18px" }}>
+                        📝 Summary
+                        </h3>
+
+                        <div
+                        style={{
+                            whiteSpace: "pre-wrap",
+                            fontSize: "14px",
+                            lineHeight: "1.6"
+                        }}
+                        >
+                        {summaryText}
                         </div>
                     </div>
+                    ) : (
+                    <div
+                        style={{
+                        height: "100%",
+                        display: "flex",
+                        flexDirection: "column"
+                        }}
+                    >
+                        <h3
+                        style={{
+                            color: "#000",
+                            marginBottom: "10px",
+                            fontSize: "18px"
+                        }}
+                        >
+                        📓 Notes
+                        </h3>
+
+                        <textarea
+                        value={notesText}
+                        onChange={(e) => setNotesText(e.target.value)}
+                        placeholder="Write your notes here..."
+                        style={{
+                            flex: 1,
+                            width: "100%",
+                            padding: "12px",
+                            borderRadius: "10px",
+                            border: "1px solid #e2e8f0",
+                            background: "#f8fafc",
+                            fontSize: "14px",
+                            resize: "none",
+                            outline: "none",
+                            color: "#000"
+                        }}
+                        />
+                    </div>
+                    )}
+                </div>
+                </div>
+
+                {activeN === "chat" && (
+                <div className={classes.inputCont}>
+                    <div className={classes.inputRow}>
+                        <div
+                            ref={editorRef}
+                            className={classes.editor}
+                            contentEditable
+                            role="textbox"
+                            data-placeholder="Ask anything..."
+                            onKeyDown={onKeyDown}
+                        />
+
+                        <button
+                            className={classes.sendButton}
+                            onClick={handleSendMessage}
+                        >
+                            ➤
+                        </button>
+                    </div>
+                </div>
                 )}
+
             </div>
 
             <style jsx global>{`
