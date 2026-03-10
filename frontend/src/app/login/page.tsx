@@ -200,7 +200,6 @@ export default function LogIn() {
 
         <div className={classes.divider}><span>OR</span></div>
 
-        {/* ИЗМЕНЕННАЯ КНОПКА GOOGLE */}
         <button
           className={classes.googleBtn}
           type="button"
