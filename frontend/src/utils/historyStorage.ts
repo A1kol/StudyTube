@@ -7,27 +7,29 @@ export type HistoryItem = {
 const STORAGE_KEY = "studai_history"
 
 export function getHistory(): HistoryItem[] {
-  if (typeof window === "undefined") return [];
+  if (typeof window === "undefined") return []
+
   try {
-    const data = localStorage.getItem(STORAGE_KEY);
-    return data ? JSON.parse(data) : [];
-  } catch (e) {
-    console.error("Failed to parse history", e);
-    return [];
+    const data = localStorage.getItem(STORAGE_KEY)
+    return data ? JSON.parse(data) : []
+  } catch {
+    return []
   }
 }
 
 export function addToHistory(item: HistoryItem) {
+  if (typeof window === "undefined") return
+
   const history = getHistory()
 
-  // удаляем дубликаты
   const filtered = history.filter(h => h.url !== item.url)
 
-  const newHistory = [item, ...filtered]
+  const newHistory = [
+    item,
+    ...filtered
+  ].slice(0, 20) // ограничим историю
 
   localStorage.setItem(STORAGE_KEY, JSON.stringify(newHistory))
-
-  console.log("History saved to:", STORAGE_KEY, "New history:", newHistory);
 }
 
 export function getRecent(): HistoryItem[] {

@@ -48,8 +48,16 @@ export default function LeftBar({ isOpen, recentItemsFromBackend = [], onVideoSe
   }, []);
 
   useEffect(() => {
-    setRecentItems(getRecent());
-  }, []);
+    setRecentItems(getRecent())
+
+    const handleStorage = () => {
+      setRecentItems(getRecent())
+    }
+
+    window.addEventListener("storage", handleStorage)
+
+    return () => window.removeEventListener("storage", handleStorage)
+  }, [])
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -59,30 +67,34 @@ export default function LeftBar({ isOpen, recentItemsFromBackend = [], onVideoSe
     router.refresh();
   };
   
-
   const handleAddContent = (videoData: any) => {
-    const url = videoData.url || (videoData.youtubeId ? `https://www.youtube.com/watch?v=${videoData.youtubeId}` : null);
 
-    if (!url) return;
+    const url =
+      videoData.url ||
+      (videoData.youtubeId
+        ? `https://www.youtube.com/watch?v=${videoData.youtubeId}`
+        : null)
+
+    if (!url) return
 
     const newItem = {
-      id: videoData.id || Date.now().toString(),
+      id: Date.now().toString(),
       title: videoData.title || "Untitled video",
       url
-    };
+    }
 
-    // 1. Сохраняем в localStorage
-    addToHistory(newItem);
-    
-    // 2. Явно обновляем состояние, чтобы меню перерисовалось мгновенно
-    setRecentItems(getRecent());
+    addToHistory(newItem)
+
+    setRecentItems(getRecent())
+
+    const youtubeId = getYoutubeId(url)
 
     onVideoSelect?.({
       title: newItem.title,
-      youtubeId: getYoutubeId(url)
-    });
+      youtubeId
+    })
 
-    setIsAddModalOpen(false);
+    setIsAddModalOpen(false)
   }
 
   
@@ -188,8 +200,14 @@ export default function LeftBar({ isOpen, recentItemsFromBackend = [], onVideoSe
                       <button
                         key={item.id}
                         onClick={() => {
-                          setActiveId(item.id);
-                          if (onVideoSelect) onVideoSelect(item);
+                          setActiveId(item.id)
+
+                          const youtubeId = getYoutubeId(item.url)
+
+                          onVideoSelect?.({
+                            title: item.title,
+                            youtubeId
+                          })
                         }}
                         className={`${classes.navButton} ${isActive ? classes.active : ""}`}
                       >
