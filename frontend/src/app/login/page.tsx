@@ -81,6 +81,7 @@ export default function LogIn() {
         : null;
 
       if (isLogin) {
+        // обычный логин
         if (data && data.token) {
           localStorage.setItem("token", data.token);
           localStorage.setItem("username", data.name || "User");
@@ -88,11 +89,28 @@ export default function LogIn() {
           router.refresh();
         }
       } else {
-        setIsLogin(true);
-        setMail("");
-        setPassword("");
-        setName("");
-        alert("Account created! Please log in.");
+        // Регистрация прошла успешно → автологин
+        if (data && data.token) {
+          localStorage.setItem("token", data.token);
+          localStorage.setItem("username", data.name || name || "User");
+          router.push("/");
+          router.refresh();
+        } else {
+          // На случай, если бэкенд не возвращает токен сразу
+          // можно сделать второй fetch на login
+          const loginRes = await fetch(`${API_URL}/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ mail, password }),
+          });
+          if (!loginRes.ok) throw new Error("Autologin failed");
+
+          const loginData = await loginRes.json();
+          localStorage.setItem("token", loginData.token);
+          localStorage.setItem("username", loginData.name || name || "User");
+          router.push("/");
+          router.refresh();
+        }
       }
     } catch (err: any) {
       console.error("Auth error:", err);
