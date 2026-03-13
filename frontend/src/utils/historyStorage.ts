@@ -27,7 +27,7 @@ export function addToHistory(item: HistoryItem) {
   const newHistory = [
     item,
     ...filtered
-  ].slice(0, 20) // ограничим историю
+  ].slice(0, 20)
 
   localStorage.setItem(STORAGE_KEY, JSON.stringify(newHistory))
 }

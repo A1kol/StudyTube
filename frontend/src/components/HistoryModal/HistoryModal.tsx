@@ -3,6 +3,7 @@
 import { HistoryItem, getHistory } from "@/utils/historyStorage"
 import { useEffect, useState } from "react"
 import classes from "./HistoryModal.module.scss"
+import { getYoutubeId } from "@/utils/getYoutubeId"
 
 interface HistoryModalProps {
   onClose: () => void
@@ -45,7 +46,15 @@ export default function HistoryModal({ onClose, onSelect }: HistoryModalProps) {
                 onClose()
               }}
             >
-              {item.title}
+              <img
+                className={classes.thumb}
+                src={`https://img.youtube.com/vi/${getYoutubeId(item.url)}/hqdefault.jpg`}
+                alt=""
+              />
+
+              <span className={classes.videoTitle}>
+                {item.title}
+              </span>
             </button>
           ))}
         </div>

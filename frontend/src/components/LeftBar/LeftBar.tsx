@@ -212,13 +212,13 @@ export default function LeftBar({ isOpen, recentItemsFromBackend = [], onVideoSe
                         className={`${classes.navButton} ${isActive ? classes.active : ""}`}
                       >
                         <div className={classes.iconContainer}>
-                          {isActive ? (
-                            <div className={classes.statusDotActive}></div>
-                          ) : (
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={classes.icon}>
-                              <polygon points="5 3 19 12 5 21 5 3" />
-                            </svg>
-                          )}
+                          <div className={classes.iconContainer}>
+                            {isActive ? (
+                              <div className={classes.currentDot}></div>
+                            ) : (
+                              <div className={classes.playIcon}>▶</div>
+                            )}
+                          </div>
                         </div>
                         <span className={classes.truncate}>{item.title}</span>
                       </button>
@@ -337,8 +337,19 @@ export default function LeftBar({ isOpen, recentItemsFromBackend = [], onVideoSe
           onSelect={(video: HistoryItem) => {
 
             const youtubeId = getYoutubeId(video.url)
-
             if (!youtubeId) return
+
+            const newItem = {
+              id: Date.now().toString(),
+              title: video.title,
+              url: video.url
+            }
+
+            addToHistory(newItem)
+
+            setRecentItems(getRecent())
+
+            setActiveId(newItem.id)
 
             onVideoSelect?.({
               title: video.title,
