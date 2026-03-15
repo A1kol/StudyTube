@@ -24,7 +24,7 @@ spring:
 
   ai:
     openai:
-      api-key:
+      api-key: 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
       chat:
         options:
           model: gpt-4o-mini # Идеально для саммари: дешево и быстро
