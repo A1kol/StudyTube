@@ -47,30 +47,44 @@ export default function UserSetModal({ onClose }: UserSetModalProps) {
   };
 
   const handleDeleteAccount = async () => {
-    const confirmDelete = window.confirm(
-      "Вы уверены, что хотите удалить аккаунт? Все ваши видео и данные будут стерты навсегда!"
-    );
-    if (!confirmDelete) return;
 
-    const token = localStorage.getItem("token");
+    const confirmDelete = window.confirm(
+      "Вы уверены, что хотите удалить аккаунт?"
+    )
+
+    if (!confirmDelete) return
+
+    const token = localStorage.getItem("token")
+    const user = getUserFromToken()
+
     try {
+
       const response = await fetch("/api/user/me", {
         method: "DELETE",
         headers: { "Authorization": `Bearer ${token}` }
-      });
+      })
 
       if (response.ok) {
-        localStorage.removeItem("token");
-        localStorage.removeItem("username");
-        window.location.href = "/login";
-      } else {
-        alert("Ошибка при удалении аккаунта");
-      }
-    } catch (error) {
-      console.error("Ошибка запроса:", error);
-    }
-  };
 
+        if (user) {
+          localStorage.removeItem(`studai_history_${user}`)
+        }
+
+        localStorage.removeItem("token")
+        localStorage.removeItem("username")
+
+        window.location.href = "/login"
+
+      }
+
+    } catch (error) {
+
+      console.error(error)
+
+    }
+
+  }
+  
   useEffect(() => {
     setUserName(getUserFromToken());
   }, []);

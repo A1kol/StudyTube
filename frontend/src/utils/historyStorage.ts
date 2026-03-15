@@ -1,24 +1,44 @@
+import { getUserFromToken } from "@/utils/getUserFromToken"
+
 export type HistoryItem = {
   id: string
   title: string
   url: string
 }
 
-const STORAGE_KEY = "studai_history"
+function getStorageKey() {
+  const user = getUserFromToken()
+
+  if (!user) return "studai_history_guest"
+
+  return `studai_history_${user}`
+}
 
 export function getHistory(): HistoryItem[] {
+
   if (typeof window === "undefined") return []
 
   try {
-    const data = localStorage.getItem(STORAGE_KEY)
+
+    const key = getStorageKey()
+
+    const data = localStorage.getItem(key)
+
     return data ? JSON.parse(data) : []
+
   } catch {
+
     return []
+
   }
+
 }
 
 export function addToHistory(item: HistoryItem) {
+
   if (typeof window === "undefined") return
+
+  const key = getStorageKey()
 
   const history = getHistory()
 
@@ -29,9 +49,12 @@ export function addToHistory(item: HistoryItem) {
     ...filtered
   ].slice(0, 20)
 
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(newHistory))
+  localStorage.setItem(key, JSON.stringify(newHistory))
+
 }
 
 export function getRecent(): HistoryItem[] {
+
   return getHistory().slice(0, 3)
+
 }

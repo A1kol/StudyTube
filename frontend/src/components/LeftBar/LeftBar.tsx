@@ -10,6 +10,8 @@ import { getRecent } from "@/utils/historyStorage";
 import HistoryModal from "../HistoryModal/HistoryModal";
 import { HistoryItem } from "@/utils/historyStorage";
 import { getYoutubeId } from "@/utils/getYoutubeId";
+import SearchModal from "../SearchModal/SearchModal"
+import { getHistory } from "@/utils/historyStorage"
 
 interface LeftBarProps {
   isOpen: boolean;
@@ -30,6 +32,7 @@ export default function LeftBar({ isOpen, recentItemsFromBackend = [], onVideoSe
   const router = useRouter();
   const [recentItems, setRecentItems] = useState<any[]>([]);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false)
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -116,7 +119,7 @@ export default function LeftBar({ isOpen, recentItemsFromBackend = [], onVideoSe
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
-                  strokeWidth="2.5" // Сделал чуть жирнее для видимости
+                  strokeWidth="2.5" 
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 >
@@ -126,7 +129,10 @@ export default function LeftBar({ isOpen, recentItemsFromBackend = [], onVideoSe
                 <span>Add content</span>
               </button>
 
-              <button className={classes.navItem}>
+              <button
+                className={classes.navItem}
+                onClick={() => setIsSearchOpen(true)}
+              >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="18" height="18"
@@ -167,29 +173,6 @@ export default function LeftBar({ isOpen, recentItemsFromBackend = [], onVideoSe
           </div>
 
           <div className={classes.barNav}>
-            <div className={classes.section}>
-              <p className={classes.sectionTitle}>Spaces</p>
-              <div className={classes.group}>
-                <button className={classes.navButton}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={classes.icon}>
-                    <path d="M5 12h14M12 5v14"/>
-                  </svg>
-                  <span>Create Space</span>
-                </button>
-                <div className={`${classes.navButton} ${classes.activeSpace}`}>
-                  <div className={classes.itemContent}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={classes.icon}>
-                      <path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/>
-                    </svg>
-                    <span className={classes.truncate}>{userName}'s Space</span>
-                  </div>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={classes.moreIcon}>
-                    <circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/>
-                  </svg>
-                </div>
-              </div>
-            </div>
-
             <div className={classes.section}>
               <p className={classes.sectionTitle}>Recents</p>
               <div className={classes.group}>
@@ -265,12 +248,6 @@ export default function LeftBar({ isOpen, recentItemsFromBackend = [], onVideoSe
                   <circle cx="12" cy="12" r="3"/>
                 </svg>
                 Settings
-              </button>
-              <button className={classes.menuItem}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-                </svg>
-                Dark Mode
               </button>
               <div className={classes.divider}></div>
               <button
@@ -357,6 +334,38 @@ export default function LeftBar({ isOpen, recentItemsFromBackend = [], onVideoSe
             })
 
             setIsHistoryOpen(false)
+          }}
+
+          
+        />
+      )}
+
+      {isSearchOpen && (
+        <SearchModal
+          onClose={()=>setIsSearchOpen(false)}
+          onSelect={(video: HistoryItem) => {
+
+            const youtubeId = getYoutubeId(video.url)
+            if (!youtubeId) return
+
+            const newItem = {
+              id: Date.now().toString(),
+              title: video.title,
+              url: video.url
+            }
+
+            addToHistory(newItem)
+
+            setRecentItems(getRecent())
+
+            setActiveId(newItem.id)
+
+            onVideoSelect?.({
+              title: video.title,
+              youtubeId
+            })
+
+            setIsSearchOpen(false)
           }}
         />
       )}

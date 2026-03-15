@@ -2,7 +2,7 @@
   position: fixed;
   inset: 0;
 
-  background: rgba(0,0,0,0.55);
+  background: rgba(0,0,0,0.35);
 
   display: flex;
   align-items: center;
@@ -15,12 +15,12 @@
   width: 420px;
   max-height: 70vh;
 
-  background: #1c1c1c;
-  border-radius: 14px;
+  background: #ffffff;
+  border-radius: 16px;
 
   padding: 24px;
 
-  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.15);
 
   overflow-y: auto;
 }
@@ -28,6 +28,8 @@
 .title {
   font-size: 20px;
   font-weight: 600;
+
+  color: #111;
 
   margin-bottom: 16px;
 }
@@ -41,16 +43,18 @@
 .item {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 
   text-align: left;
 
   padding: 8px;
+
   border-radius: 10px;
   border: none;
 
   background: transparent;
-  color: #fff;
+
+  color: #111;
 
   cursor: pointer;
 
@@ -58,11 +62,12 @@
 }
 
 .item:hover {
-  background: rgba(255,255,255,0.08);
+  background: #f4f4f4;
 }
 
 .empty {
   opacity: 0.6;
+  color: #444;
 }
 
 .thumb {
@@ -78,4 +83,6 @@
 .videoTitle {
   font-size: 14px;
   line-height: 1.2;
+
+  color: #111;
 }
