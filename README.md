@@ -1,46 +1,86 @@
-# How to Run the Project
+🚀 StudyTube: Intelligent YouTube Transcript & Analysis Service
+📌 О проекте
+StudyTube — это мощная микросервисная платформа, предназначенная для автоматического извлечения, хранения и обработки субтитров из видеороликов на YouTube.
 
-To run the project, you can use Docker Compose commands:
+В условиях постоянно меняющихся алгоритмов защиты YouTube от автоматического сбора данных (скрейпинга), стандартные методы получения транскриптов быстро перестают работать. StudyTube решает эту проблему элегантно: система использует связку надежного Java-бэкенда и гибких Python-скриптов с пробросом пользовательских сессий (cookies), что позволяет обходить капчи и блокировки, имитируя запросы от реального пользователя.
 
-### Production Environment
-To start the application in production mode:
-```bash
+✨ Ключевые возможности (Features)
+⚡ Бесперебойный парсинг: Обход защиты YouTube (ошибки "Sign in to confirm you are not a bot") за счет интеграции локальных cookies.txt.
+
+🗄️ Умное кэширование: Все скачанные субтитры и метаданные видео сохраняются в PostgreSQL. Если другой пользователь запросит то же видео, база отдаст результат мгновенно, не нагружая API YouTube.
+
+🔐 Безопасность: Полноценная система авторизации пользователей с использованием JWT-токенов.
+
+🐳 Контейнеризация: Весь стек (База, Бэкенд, Фронтенд, Nginx) упакован в Docker, что гарантирует идентичную работу проекта на любой машине — от локального ноутбука до продакшен-сервера.
+
+🛠 Технологический стек
+Система построена на современной микросервисной архитектуре:
+
+Gateway & Proxy: Nginx (маршрутизация трафика, раздача статики).
+
+Core Backend: Java 17 + Spring Boot + Spring Data JPA + Hibernate.
+
+Data Extraction: Python 3 + youtube-transcript-api (вызывается напрямую из Java-окружения).
+
+Database: PostgreSQL 15 (надежное реляционное хранилище).
+
+Infrastructure: Docker & Docker Compose (оркестрация контейнеров и управление сетями).
+
+⚙️ Требования для установки (Prerequisites)
+Перед запуском убедитесь, что на вашем сервере или локальной машине установлены:
+
+Docker (v20.10+)
+
+Docker Compose (v2.0+)
+
+Git
+
+🚀 Установка и быстрый запуск (Quick Start)
+Шаг 1. Клонирование репозитория
+Bash
+git clone https://github.com/your-username/StudyTube.git
+cd StudyTube
+Шаг 2. Настройка переменных окружения
+В корне проекта (или внутри docker-compose.yaml) должны быть заданы следующие переменные для связи с базой данных и генерации токенов:
+
+Фрагмент кода
+SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-client:5432/client_db
+SPRING_DATASOURCE_USERNAME=user
+SPRING_DATASOURCE_PASSWORD=password
+JWT_SECRET=your_super_secret_jwt_key_here
+Шаг 3. Настройка обхода блокировок YouTube (КРИТИЧЕСКИ ВАЖНО)
+Чтобы сервер мог скачивать субтитры, ему нужен доступ к вашей сессии YouTube.
+
+Установите расширение "Get cookies.txt LOCALLY" в свой браузер (Chrome/Firefox).
+
+Зайдите на сайт youtube.com и авторизуйтесь в своем аккаунте.
+
+Нажмите на иконку расширения и сделайте Export.
+
+Скопируйте содержимое скачанного файла.
+
+Создайте файл cookies.txt в корне проекта на сервере и вставьте туда скопированный текст:
+
+Bash
+nano cookies.txt # Вставьте текст, нажмите Ctrl+O, Enter, Ctrl+X
+Шаг 4. Сборка и запуск контейнеров
+Запустите проект одной командой. Docker сам скачает нужные образы, соберет Java-код, настроит Python-окружение и поднимет базу данных:
+
+Bash
 docker compose up -d --build
-```
+🚑 Решение частых проблем (Troubleshooting)
+Проблема: Субтитры не скачиваются, в логах ошибка Sign in to confirm you are not a bot или Subtitles not found.
+Решение: Срок действия ваших куки-файлов истек. Повторите Шаг 3, обновите содержимое файла cookies.txt на сервере и перезапустите контейнер:
 
-### Development Environment
-To start the application in development mode:
-```bash
-docker compose up --build
-```
+Bash
+docker compose restart client-service
+Полезные команды для мониторинга:
 
-### Stopping Services
-To stop all running services:
-```bash
-docker compose down
-```
+Посмотреть логи работы бэкенда (и ошибки Python-скрипта):
+docker logs studytube-client -f
 
-### Checking Containers
-To check the running containers:
-```bash
-docker ps
-```
+Проверить статус базы данных:
+docker logs studytube-db
 
-### Viewing Logs
-To view the logs for the services:
-```bash
-docker compose logs
-```
-
-### Additional Helpful Commands
-- `docker images`: List all Docker images on your machine.
-- `docker network ls`: List all Docker networks.
-
-## Troubleshooting
-If you encounter any issues:
-- Ensure Docker and Docker Compose are installed and running.
-- Check the logs using `docker compose logs` for any error messages.
-- Verify that the .env file is correctly configured, if applicable.
-- Ensure that no other applications are using the same ports.
-
-If issues persist, consult the official Docker documentation or seek help from the community.
+Зайти внутрь контейнера бэкенда для отладки:
+docker exec -it studytube-client /bin/bash
