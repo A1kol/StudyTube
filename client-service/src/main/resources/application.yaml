@@ -1,0 +1,40 @@
+server:
+  port: 8080
+  forward-headers-strategy: native
+
+spring:
+  application:
+    name: StudyTube
+
+  datasource:
+    url: jdbc:postgresql://postgres-client:5432/client_db
+    username: user
+    password: password
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: 804192436092-3148htjtofqqd4emtk1qr2htf2vn4g9r.apps.googleusercontent.com
+            client-secret: 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
+            scope:
+              - email
+              - profile
+
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: true
+
+app:
+  jwt:
+    secret: ${JWT_SECRET}
+    expiration: ${JWT_EXPIRATION:86400000}

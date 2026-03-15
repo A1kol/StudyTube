@@ -1,0 +1,215 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  animation: fadeIn 0.3s ease;
+}
+
+.modalCard {
+  width: 90%;
+  max-width: 420px;
+  background: #ffffff;
+  border-radius: 24px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  animation: scaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+
+  .header {
+    padding: 20px 24px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    h2 {
+      font-size: 18px;
+      font-weight: 700;
+      margin: 0;
+      color: #000;
+      letter-spacing: -0.02em;
+    }
+
+    .closeBtn {
+      background: #f5f5f7;
+      border: none;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      color: #888;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      &:hover {
+        background: #eeeeef;
+        color: #000;
+      }
+    }
+  }
+}
+
+.content {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+
+  .userProfile {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    background: #f9f9fb;
+    border-radius: 20px;
+
+    .avatar {
+      width: 56px;
+      height: 56px;
+      border-radius: 16px; // Squircle style
+      overflow: hidden;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+    }
+
+    .info {
+      .label {
+        font-size: 11px;
+        font-weight: 700;
+        color: #999;
+        margin: 0 0 2px 0;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+      .userName {
+        font-size: 17px;
+        font-weight: 700;
+        margin: 0;
+        color: #1a1a1a;
+      }
+    }
+  }
+
+  .divider {
+    height: 1px;
+    background: rgba(0, 0, 0, 0.06);
+    border: none;
+    margin: 0;
+  }
+
+  .passwordSection {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+
+    h4 {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 600;
+      color: #444;
+    }
+
+    .inputGroup {
+      position: relative;
+      display: flex;
+      align-items: center;
+
+      input {
+        width: 100%;
+        padding: 14px 16px;
+        padding-right: 90px; // Место для кнопки Update
+        background: #fff;
+        border: 1.5px solid #efefef;
+        border-radius: 14px;
+        font-size: 14px;
+        transition: all 0.2s ease;
+        color: black;
+
+        &:focus {
+          outline: none;
+          border-color: #000;
+          box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.03);
+        }
+      }
+
+      .saveBtn {
+        position: absolute;
+        right: 6px;
+        padding: 8px 14px;
+        background: #000;
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+
+        &:hover:not(:disabled) {
+          background: #333;
+        }
+
+        &:disabled {
+          opacity: 0.2;
+          cursor: not-allowed;
+        }
+      }
+    }
+
+    .hint {
+      font-size: 12px;
+      color: #aaa;
+      margin: 0;
+      padding-left: 4px;
+    }
+  }
+
+  .actions {
+    margin-top: 8px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+    display: flex;
+    justify-content: center;
+
+    .deleteBtn {
+      background: none;
+      border: none;
+      color: #ff4d4f;
+      padding: 4px 8px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-decoration: underline;
+      text-underline-offset: 4px;
+      opacity: 0.7;
+
+      &:hover {
+        opacity: 1;
+      }
+    }
+  }
+}
+
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleUp {
+  from { opacity: 0; transform: scale(0.96) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}

@@ -1,0 +1,111 @@
+.wrapper{
+    width: 100%;
+    height: 56px;
+    background-color: #ffffff;
+    padding: 8px 16px;
+
+    .insideWrapper{
+        width: 100%;
+        height: 100%;
+        display: flex;
+        justify-content: space-between;
+
+        .leftPart{
+            width: auto;
+            height: auto;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+
+            .nav{
+                display: flex;
+                width: auto;
+                height: 32px;
+                align-items: center;
+                justify-content: space-between;
+
+                .burgerMenu {
+                    width: 20px;
+                    height: 20px;
+
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center;
+                    gap: 4px;
+
+                    cursor: pointer;
+
+                    span {
+                        width: 100%;
+                        height: 1.6px;
+                        background-color: #000;
+                        border-radius: 2px;
+                        transition: all 0.3s ease;
+                    }
+                }
+                .logo{
+                    width: 24px;
+                    height: 24px;
+
+                    background: url("../../../public/Header/logoB.svg");
+                    background-position: center;
+                    background-repeat: no-repeat;
+                    background-size: contain;
+                }
+            }
+
+            .videoNameContainer{
+                height: auto;
+                display: flex;
+                align-items: center;
+
+                .videoName{
+                    font-size: 16px;
+                    font-weight: 500;
+                    color: #000000;
+                }
+            }
+        }
+        .rightPart{
+            width: auto;
+            height: auto;
+            display: flex;
+            align-items: center;
+
+            .shareButton{
+                width: 81px;
+                height: 40px;
+                border: 1px solid blue;
+                border-radius: 20px;
+                font-size: 14px;
+                color: blue;
+
+                background-color: rgba(0, 0, 255, 0.04);
+                transition: background-color 0.2s;
+            }
+            .shareButton:hover{
+                cursor: pointer;
+                transition: background-color 0.2s;
+                background-color: rgba(0, 0, 255, 0.077);
+            }
+        }
+    }
+}
+
+
+
+
+.active {
+    span:nth-child(1) {
+        transform: translateY(6px) rotate(45deg);
+    }
+
+    span:nth-child(2) {
+        opacity: 0;
+    }
+
+    span:nth-child(3) {
+        transform: translateY(-6px) rotate(-45deg);
+    }
+}
+
