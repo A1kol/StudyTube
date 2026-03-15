@@ -82,5 +82,8 @@ docker logs studytube-client -f
 Проверить статус базы данных:
 docker logs studytube-db
 
+URL сайта проекта: http://167.99.212.79/login
+Если сайт не работает корректно, то попробуйте запустить локально.
+
 Зайти внутрь контейнера бэкенда для отладки:
 docker exec -it studytube-client /bin/bash
