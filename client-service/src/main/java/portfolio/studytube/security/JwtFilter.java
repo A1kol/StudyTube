@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -19,7 +20,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.Date;
 
-
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class JwtFilter extends OncePerRequestFilter {
@@ -38,6 +39,7 @@ public class JwtFilter extends OncePerRequestFilter {
             }
 
             String authHeader = request.getHeader("Authorization");
+
             if (authHeader != null && authHeader.startsWith("Bearer ")) {
                 String token = authHeader.substring(7);
                 Claims claims = jwtService.extractAllClaims(token);
@@ -48,25 +50,34 @@ public class JwtFilter extends OncePerRequestFilter {
                     Long userId = claims.get("id", Long.class);
 
                     if (userMail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                        // Собираем объект пользователя из токена
                         User userPrincipal = User.builder()
                                 .id(userId)
                                 .name(userName)
                                 .mail(userMail)
                                 .build();
 
+                        // ВАЖНО: Используем конструктор с 3 параметрами (включая пустой список ролей),
+                        // чтобы Spring пометил аутентификацию как успешную (isAuthenticated = true)
                         UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                                userPrincipal, null, Collections.emptyList()
+                                userPrincipal,
+                                null,
+                                Collections.emptyList()
                         );
+
                         SecurityContextHolder.getContext().setAuthentication(authToken);
+                        log.debug("User {} authenticated via JWT", userMail);
                     }
                 } else {
+                    log.warn("JWT Token expired");
                     throw new InvalidTokenException("TOKEN_EXPIRED");
                 }
             }
 
             filterChain.doFilter(request, response);
 
-        } catch (RuntimeException e) {
+        } catch (Exception e) {
+            log.error("JWT Filter error: {}", e.getMessage());
             handlerExceptionResolver.resolveException(request, response, null, e);
         }
     }

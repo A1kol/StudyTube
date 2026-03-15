@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -19,6 +20,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.Date;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class JwtFilter extends OncePerRequestFilter {
@@ -31,44 +33,46 @@ public class JwtFilter extends OncePerRequestFilter {
                                     @NonNull HttpServletResponse response,
                                     @NonNull FilterChain filterChain) throws ServletException, IOException {
         try {
+            // Исправленный блок OPTIONS
             if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
-                response.setStatus(HttpServletResponse.SC_OK);
+                filterChain.doFilter(request, response);
                 return;
             }
 
             String authHeader = request.getHeader("Authorization");
 
-            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                filterChain.doFilter(request, response);
-                return;
-            }
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                String token = authHeader.substring(7);
+                Claims claims = jwtService.extractAllClaims(token);
 
-            String token = authHeader.substring(7);
-
-            Claims claims = jwtService.extractAllClaims(token);
-            String userMail = claims.get("mail", String.class);
-
-            if (userMail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 if (claims.getExpiration().after(new Date())) {
+                    String userMail = claims.get("mail", String.class);
                     String userName = claims.getSubject();
                     Long userId = claims.get("id", Long.class);
 
-                    User userPrincipal = User.builder()
-                            .name(userName)
-                            .id(userId)
-                            .mail(userMail)
-                            .build();
+                    if (userMail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                        User userPrincipal = User.builder()
+                                .name(userName)
+                                .id(userId)
+                                .mail(userMail)
+                                .build();
 
-                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                            userPrincipal, null, Collections.emptyList()
-                    );
-                    SecurityContextHolder.getContext().setAuthentication(authToken);
-                } else throw new InvalidTokenException("TOKEN_EXPIRED");
+                        // Конструктор с Collections.emptyList() делает токен Authenticated
+                        UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                                userPrincipal, null, Collections.emptyList()
+                        );
+
+                        SecurityContextHolder.getContext().setAuthentication(authToken);
+                    }
+                } else {
+                    throw new InvalidTokenException("TOKEN_EXPIRED");
+                }
             }
 
-
             filterChain.doFilter(request, response);
-        } catch (RuntimeException e) {
+
+        } catch (Exception e) {
+            log.error("JWT Filter Error in AI-Service: {}", e.getMessage());
             handlerExceptionResolver.resolveException(request, response, null, e);
         }
     }

@@ -45,11 +45,28 @@ public class AuthService {
     }
 
     public void executeRegister(RegisterRequestDTO dto) {
-        log.info("Attempting to register new user with email: {}", dto.mail());
-        validateRegistration(dto);
+        // 1. Формируем системный email: берем только логин и добавляем домен
+        String login = dto.mail().split("@")[0]; // "ivan" -> "ivan", "ivan@gmail.com" -> "ivan"
+        String systemMail = login.toLowerCase().trim() + "@studytube.com";
 
-        User savedUser = userRepository.save(UserMapper.toEntity(dto, passwordEncoder));
-        log.info("User successfully registered. ID assigned: {}", savedUser.getId());
+        log.info("Attempting to register new manual user. Resulting mail: {}", systemMail);
+
+        // 2. Проверяем на дубликат именно по сформированному адресу
+        if (userRepository.existsByMail(systemMail)) {
+            log.warn("Registration failed: User {} already exists", systemMail);
+            throw new ServiceException("USER_ALREADY_EXISTS", HttpStatus.CONFLICT);
+        }
+
+        // 3. Сохраняем юзера вручную через Builder
+        User user = User.builder()
+                .name(dto.name())
+                .mail(systemMail)
+                .password(passwordEncoder.encode(dto.password()))
+                // .role(Role.USER) // Если у тебя есть роли, добавь сюда
+                .build();
+
+        userRepository.save(user);
+        log.info("User successfully registered with system mail: {}", systemMail);
     }
 
     public AuthResponseDTO executeLogin(LoginRequestDTO dto) {

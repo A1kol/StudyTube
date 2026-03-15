@@ -6,34 +6,30 @@ spring:
 
   # Настройки Postgres (для хранения Саммари)
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/ai_db}
-    username: ${SPRING_DATASOURCE_USERNAME:ai_user}
-    password: ${SPRING_DATASOURCE_PASSWORD:ai_password}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://studytube-db-ai:5432/ai_db}
+    username: ${SPRING_DATASOURCE_USERNAME:user}
+    password: ${SPRING_DATASOURCE_PASSWORD:password}
     driver-class-name: org.postgresql.Driver
 
   jpa:
     hibernate:
-      ddl-auto: create
+      ddl-auto: update # Поменял на update, чтобы не терять данные при каждом запуске
     show-sql: true
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
 
-  # Настройки Redis (для контекста чата на 24 часа)
+  # Настройки Redis
   data:
     redis:
-      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      host: ${SPRING_DATA_REDIS_HOST:studytube-redis}
       port: 6379
 
-  # Настройки Spring AI и Ollama
+  # Настройки Spring AI - ПЕРЕЕЗД НА OPENAI
   ai:
-    ollama:
-      base-url: ${SPRING_AI_OLLAMA_BASE_URL:http://localhost:11434}
+    openai:
+      api-key: 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
       chat:
         options:
-          model: llama3.2
-          history-limit: 10
-          ttl-hours: 1
+          model: gpt-4o-mini # Идеально для саммари: дешево и быстро
+          temperature: 0.7
 
 # Безопасность
 jwt:

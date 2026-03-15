@@ -13,6 +13,5 @@ public record RegisterRequestDTO(
         String password,
 
         @NotBlank(message = "MAIL_REQUIRED")
-        @Email(message = "INVALID_EMAIL_FORMAT")
         String mail
 ) {}
