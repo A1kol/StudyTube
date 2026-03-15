@@ -22,7 +22,6 @@ spring:
       host: ${SPRING_DATA_REDIS_HOST:studytube-redis}
       port: 6379
 
-  # Настройки Spring AI - ПЕРЕЕЗД НА OPENAI
   ai:
     openai:
       api-key: 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
