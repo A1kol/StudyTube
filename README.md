@@ -1,48 +1,70 @@
 # StudyTube
 
-## Project Title
-StudyTube
+## Your AI-Powered Learning Companion
 
-## Features
-- Feature 1: Online video streaming
-- Feature 2: User accounts and profiles
-- Feature 3: Video uploads and management
-- Feature 4: Comments and ratings
+### Features
+- **Summarization**: Automatically summarize videos to help learners grasp key points quickly.
+- **Quiz Generation**: Generate personalized quizzes based on video content, enhancing retention and understanding.
+- **Progress Tracking**: Monitor learning progress with detailed analytics and feedback.
+- **JWT Authentication**: Secure user sessions with JSON Web Tokens ensuring safe access to features.
 
-## Technical Stack
-- Frontend: React.js
-- Backend: Node.js, Express
-- Database: MongoDB
-- Deployment: Docker, AWS
+### Technical Stack
+- **Backend**: Java 21, Spring Boot 3.4
+- **Frontend**: React 18, TypeScript
+- **Database**: PostgreSQL
+- **Caching**: Redis
+- **Containerization**: Docker
 
-## Infrastructure
-The project is hosted on AWS services using Docker containers to ensure scalability and reliability.
+### Infrastructure Details
+- Optimized for 2 vCPUs and 4GB RAM, capable of supporting 500-1000 concurrent users. Utilizes HikariCP for efficient database connection management.
 
-## Business Value
-StudyTube provides a platform for users to share educational videos, enhancing learning experiences and making resources accessible to a wider audience.
+### Business Value
+- The MVP valuation ranges from $3,000 to $7,000, marking significant potential for educational institutions and learners.
 
-## Installation Guide
-1. Clone the repository: `git clone https://github.com/A1kol/StudyTube`
-2. Navigate to the project directory: `cd StudyTube`
-3. Install dependencies: `npm install`
+### Installation Guide
+#### Prerequisites
+- Docker installed
+- Basic understanding of Docker and command line usage.
 
-## Environment Variables
-- `DATABASE_URL`: MongoDB connection string.
-- `JWT_SECRET`: Secret key for JWT authentication.
+#### Docker Compose
+```yaml
+version: '3'
+services:
+  db:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: studytube
+  app:
+    build: .
+    ports:
+      - '8080:8080'
+    depends_on:
+      - db
+```
 
-## API Documentation
-The API is built using REST principles. Key endpoints include:
-- `GET /videos`: Retrieve a list of videos.
-- `POST /videos`: Upload a new video.
-- `GET /users/:id`: Retrieve user profile.
+### Environment Variables
+- `DATABASE_URL`: Database connection string
+- `JWT_SECRET`: Secret key for JWT signing
 
-## Deployment Instructions
-1. Build your Docker image: `docker build -t studytube .`
-2. Run the container: `docker run -p 3000:3000 studytube`
-3. Access the application at `http://localhost:3000`
+### API Documentation
+| Endpoint                    | Method  | Description                            |
+|-----------------------------|---------|----------------------------------------|
+| `/api/auth/login`           | POST    | Login to retrieve JWT token           |
+| `/api/videos`               | GET     | Retrieve list of videos               |
+| `/api/videos/:id/quiz`     | GET     | Generate quiz for video               |
+| `/api/progress`             | GET     | Fetch user progress                    |
 
-## License Information
+### Server Deployment
+- To deploy the server, run:
+    ```sh
+    docker-compose up --build
+    ```
+- Access the application at http://167.99.212.79:8080
+
+### License
 MIT License
 
----
-This README was last updated on 2026-03-15 17:37:15 UTC.
+### Contact
+For inquiries, please contact @A1kol
