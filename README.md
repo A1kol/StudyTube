@@ -1,70 +1,46 @@
-# StudyTube
+# How to Run the Project
 
-## Your AI-Powered Learning Companion
+To run the project, you can use Docker Compose commands:
 
-### Features
-- **Summarization**: Automatically summarize videos to help learners grasp key points quickly.
-- **Quiz Generation**: Generate personalized quizzes based on video content, enhancing retention and understanding.
-- **Progress Tracking**: Monitor learning progress with detailed analytics and feedback.
-- **JWT Authentication**: Secure user sessions with JSON Web Tokens ensuring safe access to features.
-
-### Technical Stack
-- **Backend**: Java 21, Spring Boot 3.4
-- **Frontend**: React 18, TypeScript
-- **Database**: PostgreSQL
-- **Caching**: Redis
-- **Containerization**: Docker
-
-### Infrastructure Details
-- Optimized for 2 vCPUs and 4GB RAM, capable of supporting 500-1000 concurrent users. Utilizes HikariCP for efficient database connection management.
-
-### Business Value
-- The MVP valuation ranges from $3,000 to $7,000, marking significant potential for educational institutions and learners.
-
-### Installation Guide
-#### Prerequisites
-- Docker installed
-- Basic understanding of Docker and command line usage.
-
-#### Docker Compose
-```yaml
-version: '3'
-services:
-  db:
-    image: postgres:latest
-    environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: studytube
-  app:
-    build: .
-    ports:
-      - '8080:8080'
-    depends_on:
-      - db
+### Production Environment
+To start the application in production mode:
+```bash
+docker compose up -d --build
 ```
 
-### Environment Variables
-- `DATABASE_URL`: Database connection string
-- `JWT_SECRET`: Secret key for JWT signing
+### Development Environment
+To start the application in development mode:
+```bash
+docker compose up --build
+```
 
-### API Documentation
-| Endpoint                    | Method  | Description                            |
-|-----------------------------|---------|----------------------------------------|
-| `/api/auth/login`           | POST    | Login to retrieve JWT token           |
-| `/api/videos`               | GET     | Retrieve list of videos               |
-| `/api/videos/:id/quiz`     | GET     | Generate quiz for video               |
-| `/api/progress`             | GET     | Fetch user progress                    |
+### Stopping Services
+To stop all running services:
+```bash
+docker compose down
+```
 
-### Server Deployment
-- To deploy the server, run:
-    ```sh
-    docker-compose up --build
-    ```
-- Access the application at http://167.99.212.79:8080
+### Checking Containers
+To check the running containers:
+```bash
+docker ps
+```
 
-### License
-MIT License
+### Viewing Logs
+To view the logs for the services:
+```bash
+docker compose logs
+```
 
-### Contact
-For inquiries, please contact @A1kol
+### Additional Helpful Commands
+- `docker images`: List all Docker images on your machine.
+- `docker network ls`: List all Docker networks.
+
+## Troubleshooting
+If you encounter any issues:
+- Ensure Docker and Docker Compose are installed and running.
+- Check the logs using `docker compose logs` for any error messages.
+- Verify that the .env file is correctly configured, if applicable.
+- Ensure that no other applications are using the same ports.
+
+If issues persist, consult the official Docker documentation or seek help from the community.
